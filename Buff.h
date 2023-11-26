@@ -11,15 +11,15 @@ class Buff
     std::string name;
     Ability *parent = nullptr;
     std::function<int32_t(int32_t rank, int32_t attackPowerIn)> onCalculateAttackPower = nullptr;
-    std::function<int32_t (Combatant *Cbt, int32_t rank, int32_t tickNumber)> onDotTickDamage = nullptr;
+    std::function<int32_t (Combatant *Caster, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration)> onDotTickDamage = nullptr;
     std::function<int32_t (Combatant *Cbt)> onCalculateDotTickPeriod = [](Combatant *Cbt){return 3;};
     std::function<float (Combatant *Cbt, int32_t rank)> onCalculateDuration = nullptr;
 public:
     Buff(std::string name, Ability *parent);
     std::function<int32_t (int32_t rank, int32_t attackPowerIn)> getOnCalculateAttackPower() const;
     void setOnCalculateAttackPower(const std::function<int32_t (int32_t rank, int32_t attackPowerIn)> &value);
-    std::function<int32_t (Combatant *Cbt, int32_t rank, int32_t tickNumber)> getOnDotTickDamage() const;
-    void setOnDotTickDamage(const std::function<int32_t (Combatant *Cbt, int32_t rank, int32_t tickNumber)> &value);
+    std::function<int32_t (Combatant *Caster, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration)> getOnDotTickDamage() const;
+    void setOnDotTickDamage(const std::function<int32_t (Combatant *Caster, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration)> &value);
     std::function<int32_t (Combatant *Cbt)> getOnCalculateDotTickPeriod() const;
     void setOnCalculateDotTickPeriod(const std::function<int32_t (Combatant *Cbt)> &value);
     std::string getName() const;

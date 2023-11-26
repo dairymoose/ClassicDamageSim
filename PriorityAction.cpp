@@ -80,7 +80,8 @@ void PriorityAction::setIgnoreResourceCost(bool value)
     ignoreResourceCost = value;
 }
 
-PriorityAction::PriorityAction(Ability *ability)
+PriorityAction::PriorityAction(Ability *ability, int32_t rank)
 {
     this->ability = ability;
+    this->ability->setRank(rank);
 }

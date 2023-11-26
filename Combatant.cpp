@@ -192,7 +192,8 @@ void Combatant::applyDotDamage(PlayerCharacter *PC, float timestamp)
         if (buff->getBuff()->getOnDotTickDamage() != nullptr) {
             if (buff->isTickTimerExpired(this, timestamp)) {
                 buff->triggerTickTimer(timestamp);
-                int32_t damage = buff->getBuff()->getOnDotTickDamage()(this, buff->getBuff()->getParent()->getRank(), buff->getTickCount());
+                float buffDuration = buff->getCapturedDuration();
+                int32_t damage = buff->getBuff()->getOnDotTickDamage()(PC, this, buff->getBuff()->getParent()->getRank(), buff->getTickCount(), buffDuration);
                 this->applyDamage((Combatant *)PC, damage, timestamp, buff->getBuff()->getParent());
             }
         }
@@ -359,6 +360,11 @@ void Combatant::setCastStartTime(float value)
 }
 
 Combatant::Combatant()
+{
+    
+}
+
+Combatant::~Combatant()
 {
     
 }

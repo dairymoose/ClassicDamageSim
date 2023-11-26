@@ -47,12 +47,12 @@ void Buff::setOnCalculateAttackPower(const std::function<int32_t (int32_t rank, 
     onCalculateAttackPower = value;
 }
 
-std::function<int32_t (Combatant *Cbt, int32_t rank, int32_t tickNumber)> Buff::getOnDotTickDamage() const
+std::function<int32_t (Combatant *Caster, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration)> Buff::getOnDotTickDamage() const
 {
     return onDotTickDamage;
 }
 
-void Buff::setOnDotTickDamage(const std::function<int32_t (Combatant *Cbt, int32_t, int32_t)> &value)
+void Buff::setOnDotTickDamage(const std::function<int32_t (Combatant *Caster, Combatant *Target, int32_t, int32_t, float buffDuration)> &value)
 {
     onDotTickDamage = value;
 }

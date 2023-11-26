@@ -13,7 +13,7 @@ class PriorityAction
     bool ignoreGcd = false;
     bool ignoreResourceCost = false;
 public:
-    PriorityAction(Ability *ability);
+    PriorityAction(Ability *ability, int32_t rank=1);
     Ability *getAbility() const;
     void setAbility(Ability *value);
     std::function<bool (PlayerCharacter *PC, float timestamp)> getPredicate() const;

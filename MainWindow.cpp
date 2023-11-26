@@ -38,6 +38,7 @@ void MainWindow::on_simButton_clicked()
     PC.addTalent("Two-Handed Weapon Specialization", 4); 
     PC.addTalent("Improved Charge", 2);
     PC.addTalent("Anger Management", 1);
+    PC.addTalent("Improved Rend", 3);
     Weapon *twoHander = new Weapon();
     twoHander->setMinDamage(92);
     twoHander->setMaxDamage(139);
@@ -52,7 +53,7 @@ void MainWindow::on_simButton_clicked()
     sim.getEnemyList().push_back(enemy);
     PriorityActionList PAL;
     {
-        PriorityAction *PA = new PriorityAction(gal->BattleShout);
+        PriorityAction *PA = new PriorityAction(gal->BattleShout, 4);
         PA->setIgnoreGcd(true);
         PA->setIgnoreResourceCost(true);
         bool didPreBattleShout = false;
@@ -68,7 +69,7 @@ void MainWindow::on_simButton_clicked()
         PAL.getPriorityActions().push_back(PA);
     }
     {
-        PriorityAction *PA = new PriorityAction(gal->Charge);
+        PriorityAction *PA = new PriorityAction(gal->Charge, 2);
         PAL.getPriorityActions().push_back(PA);
     }
     {
@@ -80,24 +81,24 @@ void MainWindow::on_simButton_clicked()
         PAL.getPriorityActions().push_back(PA);
     }
     {
-        PriorityAction *PA = new PriorityAction(gal->Execute);
+        PriorityAction *PA = new PriorityAction(gal->Execute, 3);
         PAL.getPriorityActions().push_back(PA);
     }
     {
-        PriorityAction *PA = new PriorityAction(gal->Rend);
+        PriorityAction *PA = new PriorityAction(gal->Rend, 5);
         PA->setPredicate([&](PlayerCharacter *PC, float timestamp){return !PC->getTarget()->hasDebuff(gal->Rend->getGrantedDebuff());});
         PAL.getPriorityActions().push_back(PA);
     }
     {
-        PriorityAction *PA = new PriorityAction(gal->MortalStrike);
+        PriorityAction *PA = new PriorityAction(gal->MortalStrike, 1);
         PAL.getPriorityActions().push_back(PA);
     }
     {
-        PriorityAction *PA = new PriorityAction(gal->Whirlwind);
+        PriorityAction *PA = new PriorityAction(gal->Whirlwind, 1);
         PAL.getPriorityActions().push_back(PA);
     }
     {
-        PriorityAction *PA = new PriorityAction(gal->Slam);
+        PriorityAction *PA = new PriorityAction(gal->Slam, 2);
         PA->setPredicate([](PlayerCharacter *PC, float timestamp){if (PC->getPriorityActionList()->getActionFromAbilityName("Main-hand attack")->getAbility()->getTimeSinceLastUsed(timestamp) < 0.20f) return true; return false;});
         //PAL.getPriorityActions().push_back(PA);
     }

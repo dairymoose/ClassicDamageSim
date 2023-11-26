@@ -40,6 +40,7 @@ protected:
     std::vector<AppliedBuff *> Debuffs;
 public:
     Combatant();
+    virtual ~Combatant();
     float getPhysicalDamageReduction() const;
     void setPhysicalDamageReduction(float value);
     float getMagicalDamageReduction() const;

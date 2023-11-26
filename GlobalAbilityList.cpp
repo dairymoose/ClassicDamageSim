@@ -47,8 +47,31 @@ GlobalAbilityList::GlobalAbilityList()
     this->Rend = new Ability("Rend");
     this->Rend->setAbilityDamageType(AbilityDamageType::Physical);
     Buff *RendDebuff = new Buff("Rend", this->Rend);
-    RendDebuff->setOnCalculateDuration([&](Combatant *Cbt, int32_t rank){return 18;});
-    RendDebuff->setOnDotTickDamage([](Combatant *Cbt, int32_t rank, int32_t tickNumber){return DamageSimulation::Round(3*89.0f/18);});
+    RendDebuff->setOnCalculateDuration([&](Combatant *Cbt, int32_t rank){return std::min(21, rank*3+6);});
+    RendDebuff->setOnDotTickDamage([](Combatant *Caster, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration){int32_t dmg = 0; switch(rank){
+        case 1:dmg=15;
+            break;
+        case 2:dmg=28;
+            break;
+        case 3:dmg=45;
+            break;
+        case 4:dmg=66;
+            break;
+        case 5:dmg=98;
+            break;
+        case 6:dmg=126;
+            break;
+        case 7:dmg=147;
+            break;
+        }
+        float talentDmgBoost = 1.0f;
+        if (PlayerCharacter *PC = dynamic_cast<PlayerCharacter *>(Caster)) {
+            int32_t impRend = PC->getTalentRank("Improved Rend");
+            if (impRend > 0) {
+                talentDmgBoost = 1.0f + impRend*0.10f + 0.05f;
+            }
+        }
+        return DamageSimulation::dotTickDamageFromTotalDamage(dmg * talentDmgBoost, 3.0f, buffDuration);});
     this->Rend->setIgnoresArmor(true);
     this->Rend->setResourceCost(10);
     this->Rend->setGrantedDebuff(RendDebuff);
