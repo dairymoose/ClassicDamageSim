@@ -14,7 +14,7 @@ GlobalAbilityList::GlobalAbilityList()
     bool didPrintStats = false;
     this->PrintPlayerStats = new Ability("Print Stats");
     this->PrintPlayerStats->setCooldownFunction([](PlayerCharacter *PC, int32_t rank){return 5.0f;});
-    this->PrintPlayerStats->setOnCooldownTriggeredFunction([&](float timestamp, PlayerCharacter *PC, int32_t rank){ if(!didPrintStats){didPrintStats=true;float specDamageBonus = PC->calculateGlobalDamageBonus();COMBAT_LOG(timestamp, PC, PC->getName()<<": Level "<<PC->getLevel()<<" "<<PC->getPlayerRace()<<" "<<PC->getPlayerClass().getClassName()<< ", "<<"AP="<<PC->calculateMeleeAttackPower()<<", "<<"WepMin="<<(int32_t)(specDamageBonus*PC->calculatedWeaponMinDamage())<<", "<<"WepMax="<<(int32_t)(specDamageBonus*PC->calculatedWeaponMaxDamage()));} });
+    this->PrintPlayerStats->setOnCooldownTriggeredFunction([=](float timestamp, PlayerCharacter *PC, int32_t rank) mutable { if(!didPrintStats){didPrintStats=true;float specDamageBonus = PC->calculateGlobalDamageBonus();COMBAT_LOG(timestamp, PC, PC->getName()<<": Level "<<PC->getLevel()<<" "<<PC->getPlayerRace()<<" "<<PC->getPlayerClass().getClassName()<< ", "<<"AP="<<PC->calculateMeleeAttackPower()<<", "<<"WepMin="<<(int32_t)(specDamageBonus*PC->calculatedWeaponMinDamage())<<", "<<"WepMax="<<(int32_t)(specDamageBonus*PC->calculatedWeaponMaxDamage()));} });
     this->PrintPlayerStats->setIsGcdAbility(false);
     
     this->MeleeMainhandAutoAttack = new Ability("Main-hand attack");
@@ -92,6 +92,6 @@ GlobalAbilityList::GlobalAbilityList()
     bool didCharge = false;
     this->Charge->setCanUseFunction([&](PlayerCharacter *PC, int32_t rank){ if (!didCharge) {didCharge = true; return true;} return false; });
     this->Charge->setCooldownFunction([](PlayerCharacter *PC, int32_t rank){ return 15; });
-    this->Charge->setCastTime(0.2f);
+    this->Charge->setCastTime(0.4f);
     this->Charge->setIsGcdAbility(false);
 }
