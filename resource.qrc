@@ -1,0 +1,18 @@
+<RCC>
+    <qresource prefix="/img">
+        <file>PaperDoll.png</file>
+        <file>mortal_strike.jpg</file>
+        <file>battle_shout.jpg</file>
+        <file>red_x.png</file>
+        <file>up_arrow.png</file>
+        <file>down_arrow.png</file>
+        <file>green_check.png</file>
+        <file>charge.jpg</file>
+        <file>rend.jpg</file>
+        <file>slam.jpg</file>
+        <file>whirlwind.jpg</file>
+        <file>main-hand_attack.jpg</file>
+        <file>off-hand_attack.jpg</file>
+        <file>execute.jpg</file>
+    </qresource>
+</RCC>

@@ -252,6 +252,18 @@ void Combatant::removeExpiredDebuffs(float timestamp)
     }
 }
 
+void Combatant::clearAllBuffsAndDebuffsAndFreeMemory()
+{
+    for (int i=0; i<this->Buffs.size(); ++i) {
+        delete this->Buffs[i];
+    }
+    this->Buffs.clear();
+    for (int i=0; i<this->Debuffs.size(); ++i) {
+        delete this->Debuffs[i];
+    }
+    this->Debuffs.clear();
+}
+
 std::string Combatant::getName() const
 {
     return name;
@@ -366,5 +378,8 @@ Combatant::Combatant()
 
 Combatant::~Combatant()
 {
+    this->clearAllBuffsAndDebuffsAndFreeMemory();
     
+    delete combatLog;
+    combatLog = nullptr;
 }

@@ -22,6 +22,10 @@ public:
     std::vector<PriorityAction *>& getPriorityActions();
     PriorityAction *getNextAction(PlayerCharacter *PC, float timestamp);
     PriorityAction *getActionFromAbilityName(std::string name);
+    PriorityAction *getActionFromInternalName(std::string name);
+    PriorityAction *addNewAction(PriorityAction *action);
+    bool removeExistingAction(PriorityAction *action);
+    
     void resetAllAbilities();
 };
 

@@ -26,8 +26,10 @@ CONFIG += c++11
 
 SOURCES += \
         Ability.cpp \
+        ActionsDialog.cpp \
         AppliedBuff.cpp \
         Buff.cpp \
+        CharacterSheet.cpp \
         CombatLog.cpp \
         Combatant.cpp \
         DamageSimulation.cpp \
@@ -38,6 +40,7 @@ SOURCES += \
         PlayerClass.cpp \
         PriorityAction.cpp \
         PriorityActionList.cpp \
+        SingularPriorityAction.cpp \
         Talent.cpp \
         Weapon.cpp \
         main.cpp \
@@ -46,8 +49,10 @@ SOURCES += \
 HEADERS += \
         Ability.h \
         AbilityDamageType.h \
+        ActionsDialog.h \
         AppliedBuff.h \
         Buff.h \
+        CharacterSheet.h \
         CombatLog.h \
         Combatant.h \
         DamageSimulation.h \
@@ -60,13 +65,20 @@ HEADERS += \
         PlayerClass.h \
         PriorityAction.h \
         PriorityActionList.h \
+        SingularPriorityAction.h \
         Talent.h \
         Weapon.h
 
 FORMS += \
-        MainWindow.ui
+        ActionsDialog.ui \
+        CharacterSheet.ui \
+        MainWindow.ui \
+        SingularPriorityAction.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+RESOURCES += \
+    resource.qrc

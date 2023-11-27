@@ -4,17 +4,24 @@
 #include "Buff.h"
 #include "DamageSimulation.h"
 
+void GlobalAbilityList::resetFields()
+{
+    this->didPrintStats = false;
+    this->didCharge = false;
+}
+
 GlobalAbilityList::GlobalAbilityList()
 {    
+    this->resetFields();
+    
     this->PrintDps = new Ability("Print DPS");
     this->PrintDps->setCooldownFunction([](PlayerCharacter *PC, int32_t rank){return 5.0f;});
     this->PrintDps->setOnCooldownTriggeredFunction([](float timestamp, PlayerCharacter *PC, int32_t rank){ if (PC->getDamageDone() > 0) COMBAT_LOG(timestamp, PC, "pDmg="<<PC->getDamageDone()<<", pDPS="<<PC->getDamageDone()/timestamp); });
     this->PrintDps->setIsGcdAbility(false);
  
-    bool didPrintStats = false;
     this->PrintPlayerStats = new Ability("Print Stats");
     this->PrintPlayerStats->setCooldownFunction([](PlayerCharacter *PC, int32_t rank){return 5.0f;});
-    this->PrintPlayerStats->setOnCooldownTriggeredFunction([=](float timestamp, PlayerCharacter *PC, int32_t rank) mutable { if(!didPrintStats){didPrintStats=true;float specDamageBonus = PC->calculateGlobalDamageBonus();COMBAT_LOG(timestamp, PC, PC->getName()<<": Level "<<PC->getLevel()<<" "<<PC->getPlayerRace()<<" "<<PC->getPlayerClass().getClassName()<< ", "<<"AP="<<PC->calculateMeleeAttackPower()<<", "<<"WepMin="<<(int32_t)(specDamageBonus*PC->calculatedWeaponMinDamage())<<", "<<"WepMax="<<(int32_t)(specDamageBonus*PC->calculatedWeaponMaxDamage()));} });
+    this->PrintPlayerStats->setOnCooldownTriggeredFunction([&](float timestamp, PlayerCharacter *PC, int32_t rank) { if(!didPrintStats){didPrintStats=true;float specDamageBonus = PC->calculateGlobalDamageBonus();COMBAT_LOG(timestamp, PC, PC->getName()<<": Level "<<PC->getLevel()<<" "<<PC->getPlayerRace()<<" "<<PC->getPlayerClass().getClassName()<< ", "<<"AP="<<PC->calculateMeleeAttackPower()<<", "<<"WepMin="<<(int32_t)(specDamageBonus*PC->calculatedWeaponMinDamage())<<", "<<"WepMax="<<(int32_t)(specDamageBonus*PC->calculatedWeaponMaxDamage()));} });
     this->PrintPlayerStats->setIsGcdAbility(false);
     
     this->MeleeMainhandAutoAttack = new Ability("Main-hand attack");
@@ -80,7 +87,15 @@ GlobalAbilityList::GlobalAbilityList()
     this->BattleShout->setAbilityDamageType(AbilityDamageType::Physical);
     Buff *BattleShoutBuff = new Buff("Battle Shout", this->BattleShout);
     BattleShoutBuff->setOnCalculateDuration([&](Combatant *Cbt, int32_t rank){return 120;});
-    BattleShoutBuff->setOnCalculateAttackPower([](int32_t rank, int32_t AP){return AP + 92;});
+    BattleShoutBuff->setOnCalculateAttackPower([](int32_t rank, int32_t AP){int32_t b=0;
+                                                                            if (rank == 1) b = 20;
+                                                                            if (rank == 2) b = 40;
+                                                                            if (rank == 3) b = 60;
+                                                                            if (rank == 4) b = 94;
+                                                                            if (rank == 5) b = 139;
+                                                                            if (rank == 6) b = 193;
+                                                                            if (rank == 7) b = 232;
+                                                                            return AP + b;});
     this->BattleShout->setResourceCost(10);
     this->BattleShout->setGrantedBuff(BattleShoutBuff);
     
@@ -93,27 +108,42 @@ GlobalAbilityList::GlobalAbilityList()
     
     this->MortalStrike = new Ability("Mortal Strike");
     this->MortalStrike->setAbilityDamageType(AbilityDamageType::Physical);
-    this->MortalStrike->setDamageFunction([](PlayerCharacter *PC, int32_t rank){float bonus = PC->calculateGlobalDamageBonus();return PC->calculateSimulatedMainhandSwing() + 85;});
+    this->MortalStrike->setDamageFunction([](PlayerCharacter *PC, int32_t rank){int32_t d=0;
+                                                                                if (rank == 1){d=85;}
+                                                                                if (rank == 2){d=110;}
+                                                                                if (rank == 3){d=135;}
+                                                                                if (rank == 4){d=160;}
+                                                                                return PC->calculateSimulatedMainhandSwing() + d;});
     this->MortalStrike->setCooldownFunction([](PlayerCharacter *PC, int32_t rank){return 6;});
     this->MortalStrike->setResourceCost(30);
     
     this->Slam = new Ability("Slam");
     this->Slam->setCastTime(1.5f);
     this->Slam->setAbilityDamageType(AbilityDamageType::Physical);
-    this->Slam->setDamageFunction([](PlayerCharacter *PC, int32_t rank){float bonus = PC->calculateGlobalDamageBonus();return PC->calculateSimulatedMainhandSwing() + 43;});
+    this->Slam->setDamageFunction([](PlayerCharacter *PC, int32_t rank){int32_t d=0;
+                                                                        if (rank == 1){d=32;}
+                                                                        if (rank == 2){d=43;}
+                                                                        if (rank == 3){d=68;}
+                                                                        if (rank == 4){d=87;}
+                                                                        return PC->calculateSimulatedMainhandSwing() + d;});
     this->Slam->setResourceCost(15);
     
     this->Execute = new Ability("Execute");
     this->Execute->setAbilityDamageType(AbilityDamageType::Physical);
-    this->Execute->setDamageFunction([](PlayerCharacter *PC, int32_t rank){return 325 + PC->getResource()*9;});
+    this->Execute->setDamageFunction([](PlayerCharacter *PC, int32_t rank){int32_t d=0; int32_t r=0; 
+                                                                           if (rank == 1){d=125;r=3;}
+                                                                           if (rank == 2){d=200;r=6;}
+                                                                           if (rank == 3){d=325;r=9;}
+                                                                           if (rank == 4){d=450;r=12;}
+                                                                           if (rank == 5){d=600;r=15;}
+                                                                           return d + PC->getResource()*r;});
     this->Execute->setResourceGenerationFunction([](PlayerCharacter *PC, int32_t rank, int32_t damageDone, bool isCritical){ return -100; });
     this->Execute->setCanUseFunction([](PlayerCharacter *PC, int32_t rank){float tHp = PC->getTarget()->getCurrentHp(); float tMaxHp = PC->getTarget()->getMaxHp(); float hpPct = tHp/tMaxHp; if (hpPct <= 0.20f) return true; return false;});
     this->Execute->setResourceCost(15);
     
     this->Charge = new Ability("Charge");
-    this->Charge->setResourceGenerationFunction([](PlayerCharacter *PC, int32_t rank, int32_t damageDone, bool isCritical){ int32_t impCharge = PC->getTalentRank("Improved Charge"); return 12 + impCharge*3; });
-    bool didCharge = false;
-    this->Charge->setCanUseFunction([&](PlayerCharacter *PC, int32_t rank){ if (!didCharge) {didCharge = true; return true;} return false; });
+    this->Charge->setResourceGenerationFunction([](PlayerCharacter *PC, int32_t rank, int32_t damageDone, bool isCritical){ int32_t impCharge = PC->getTalentRank("Improved Charge"); return 9 + (3*(rank-1)) + impCharge*3; });
+    this->Charge->setCanUseFunction([&](PlayerCharacter *PC, int32_t rank){ if (!didCharge && PC->getDamageDone() == 0) {didCharge = true; return true;} return false; });
     this->Charge->setCooldownFunction([](PlayerCharacter *PC, int32_t rank){ return 15; });
     this->Charge->setCastTime(0.4f);
     this->Charge->setIsGcdAbility(false);

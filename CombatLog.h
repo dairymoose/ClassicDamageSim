@@ -67,6 +67,9 @@ public:
     std::vector<std::string>& getLogText() {
         return logText;
     }
+    void clear() {
+        this->logText.clear();
+    }
 };
 
 #endif // COMBATLOG_H

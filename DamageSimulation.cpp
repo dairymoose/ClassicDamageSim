@@ -15,6 +15,28 @@ void DamageSimulation::setPC(PlayerCharacter *value)
     PC = value;
 }
 
+void DamageSimulation::reset()
+{
+    std::vector<Combatant *> combatants;
+    this->gatherAllCombatants(combatants);
+    for (auto combatant : combatants) {
+        combatant->setHp(combatant->getMaxHp());
+        combatant->setIsCasting(false);
+        combatant->setIsGcdActive(false);
+        combatant->setDamageDone(0);
+        combatant->clearAllBuffsAndDebuffsAndFreeMemory();
+    }
+    if (this->PC != nullptr) {
+        this->PC->initResourceValue();
+        this->PC->getCombatLog()->clear();
+        this->PC->resetAllTalentTimestamps();
+    }
+    this->time = 0.0f;
+    if (this->globalAbilityList != nullptr) {
+        this->globalAbilityList->resetFields();
+    }
+}
+
 bool DamageSimulation::almostEqual(float a, float b, float threshold)
 {
     float diff = a - b;

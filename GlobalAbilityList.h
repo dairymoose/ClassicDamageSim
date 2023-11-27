@@ -19,6 +19,11 @@ public:
     Ability *Execute = nullptr;
     Ability *Charge = nullptr;
     
+    bool didPrintStats = false;
+    bool didCharge = false;
+    
+    void resetFields();
+    
     GlobalAbilityList();
 };
 

@@ -27,6 +27,8 @@ public:
     PlayerCharacter *getPC() const;
     void setPC(PlayerCharacter *value);
     
+    void reset();
+    
     void simulate(PriorityActionList *priorityActions);
     float getTimeStep() const;
     void setTimeStep(float value);

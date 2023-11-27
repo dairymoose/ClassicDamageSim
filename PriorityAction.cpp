@@ -80,6 +80,36 @@ void PriorityAction::setIgnoreResourceCost(bool value)
     ignoreResourceCost = value;
 }
 
+std::string PriorityAction::getPredicateText() const
+{
+    return predicateText;
+}
+
+void PriorityAction::setPredicateText(const std::string &value)
+{
+    predicateText = value;
+}
+
+std::string PriorityAction::getNameOverride() const
+{
+    return nameOverride;
+}
+
+void PriorityAction::setNameOverride(const std::string &value)
+{
+    nameOverride = value;
+}
+
+std::string PriorityAction::getInternalName() const
+{
+    return internalName;
+}
+
+void PriorityAction::setInternalName(const std::string &value)
+{
+    internalName = value;
+}
+
 PriorityAction::PriorityAction(Ability *ability, int32_t rank)
 {
     this->ability = ability;

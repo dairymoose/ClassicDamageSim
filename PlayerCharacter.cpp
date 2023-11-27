@@ -164,7 +164,6 @@ float PlayerCharacter::calculateDpsFromAttackPower(int32_t attackPower)
  * 
  * 
  */
-
 int32_t PlayerCharacter::calculateMeleeAttackPower()
 {
     if (this->playerClass.cls == this->playerClass.Warrior) {
@@ -299,7 +298,7 @@ void PlayerCharacter::setOffHandItem(Item *value)
     offHandItem = value;
 }
 
-PlayerClass PlayerCharacter::getPlayerClass() const
+PlayerClass& PlayerCharacter::getPlayerClass()
 {
     return playerClass;
 }
@@ -308,9 +307,16 @@ void PlayerCharacter::setPlayerClass(const PlayerClass &value)
 {
     playerClass = value;
     
+    this->initResourceValue();
+}
+
+void PlayerCharacter::initResourceValue()
+{
     if (this->getPlayerClass().cls == this->getPlayerClass().Warrior) {
         this->setResource(0);
         this->setResourceMax(100);
+    } else {
+        this->setResource(this->getResourceMax());
     }
 }
 
@@ -391,7 +397,43 @@ void PlayerCharacter::setPriorityActionList(PriorityActionList *value)
     priorityActionList = value;
 }
 
+void PlayerCharacter::resetAllTalentTimestamps()
+{
+    for (int i=0; i<this->talents.size(); ++i) {
+        this->talents[i]->setLastUsedTimestamp(0.0f);
+    }
+}
+
 PlayerCharacter::PlayerCharacter()
 {
     ;
+}
+
+PlayerCharacter::~PlayerCharacter()
+{
+    for (int i=0; i<this->talents.size(); ++i) {
+        delete this->talents[i];
+    }
+    this->talents.clear();
+    
+    if (headItem != nullptr) {delete headItem; headItem = nullptr;}
+    if (neckItem != nullptr) {delete neckItem; neckItem = nullptr;}
+    if (shoulderItem != nullptr) {delete shoulderItem; shoulderItem = nullptr;}
+    if (backItem != nullptr) {delete backItem; backItem = nullptr;}
+    if (chestItem != nullptr) {delete chestItem; chestItem = nullptr;}
+    if (shirtItem != nullptr) {delete shirtItem; shirtItem = nullptr;}
+    if (tabardItem != nullptr) {delete tabardItem; tabardItem = nullptr;}
+    if (wristItem != nullptr) {delete wristItem; wristItem = nullptr;}
+    if (handItem != nullptr) {delete handItem; handItem = nullptr;}
+    if (beltItem != nullptr) {delete beltItem; beltItem = nullptr;}
+    if (legItem != nullptr) {delete legItem; legItem = nullptr;}
+    if (feetItem != nullptr) {delete feetItem; feetItem = nullptr;}
+    if (finger1Item != nullptr) {delete finger1Item; finger1Item = nullptr;}
+    if (finger2Item != nullptr) {delete finger2Item; finger2Item = nullptr;}
+    if (trinket1Item != nullptr) {delete trinket1Item; trinket1Item = nullptr;}
+    if (trinket2Item != nullptr) {delete trinket2Item; trinket2Item = nullptr;}
+    if (mainHandItem != nullptr) {delete mainHandItem; mainHandItem = nullptr;}
+    if (offHandItem != nullptr) {delete offHandItem; offHandItem = nullptr;}
+    if (rangedItem != nullptr) {delete rangedItem; rangedItem = nullptr;}
+    if (ammoItem != nullptr) {delete ammoItem; ammoItem = nullptr;}
 }

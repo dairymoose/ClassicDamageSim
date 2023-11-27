@@ -10,12 +10,21 @@
 class PlayerClass {
 private:
     static std::unordered_map<uint8_t, std::string> classLookup;
-    uint8_t pclass_inc = 0;
+    uint8_t pclass_inc;
     uint8_t addNewClass(std::string className) {
+        for (auto&& pair : classLookup) {
+            if (pair.second == className) {
+                return pair.first;
+            }
+        }
         classLookup.insert({pclass_inc, className});
         return pclass_inc++;
     }
-public:    
+public:
+    PlayerClass(){}
+    ~PlayerClass() {
+    }
+    
     PCLASS(Warrior);
     PCLASS(Paladin);
     PCLASS(Shaman);

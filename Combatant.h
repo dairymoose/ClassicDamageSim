@@ -64,6 +64,7 @@ public:
     bool removeDebuff(AppliedBuff *toRemove);
     void removeExpiredBuffs(float timestamp);
     void removeExpiredDebuffs(float timestamp);
+    void clearAllBuffsAndDebuffsAndFreeMemory();
     std::string getName() const;
     void setName(const std::string &value);
     CombatLog *getCombatLog() const;

@@ -6,12 +6,18 @@
 #include "Ability.h"
 class PlayerCharacter;
 
+#define STR(x) #x
+#define SET_PREDICATE_WITH_TEXT(PA, predicate) PA->setPredicate(predicate); PA->setPredicateText(STR(predicate));
+
 class PriorityAction
 {
     Ability *ability = nullptr;
     std::function<bool (PlayerCharacter *PC, float timestamp)> predicate = nullptr;
     bool ignoreGcd = false;
     bool ignoreResourceCost = false;
+    std::string predicateText = "";
+    std::string nameOverride = "";
+    std::string internalName = "";
 public:
     PriorityAction(Ability *ability, int32_t rank=1);
     Ability *getAbility() const;
@@ -24,6 +30,15 @@ public:
     void setIgnoreGcd(bool value);
     bool getIgnoreResourceCost() const;
     void setIgnoreResourceCost(bool value);
+    std::string getPredicateText() const;
+    void setPredicateText(const std::string &value);
+    std::string getNameOverride() const;
+    void setNameOverride(const std::string &value);
+    bool hasNameOverride() {
+        return this->nameOverride.length() > 0;
+    }
+    std::string getInternalName() const;
+    void setInternalName(const std::string &value);
 };
 
 #endif // PRIORITYACTION_H

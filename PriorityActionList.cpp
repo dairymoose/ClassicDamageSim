@@ -79,6 +79,37 @@ PriorityAction *PriorityActionList::getActionFromAbilityName(std::string name)
     return nullptr;
 }
 
+PriorityAction *PriorityActionList::getActionFromInternalName(std::string name)
+{
+    for (int i=0; i<this->priorityActions.size(); ++i) {
+        if (this->priorityActions[i]->getInternalName() == name) {
+            return this->priorityActions[i];
+        }
+    }
+    return nullptr;
+}
+
+PriorityAction *PriorityActionList::addNewAction(PriorityAction *action)
+{
+    if (action != nullptr) {
+        this->priorityActions.push_back(action);
+    }
+    return action;
+}
+
+bool PriorityActionList::removeExistingAction(PriorityAction *action)
+{
+    if (action == nullptr)
+        return false;
+    for (auto&& it=this->priorityActions.begin(); it!=this->priorityActions.end(); ++it) {
+        if (*it == action) {
+            this->priorityActions.erase(it);
+            return true;
+        }
+    }
+    return false;
+}
+
 void PriorityActionList::resetAllAbilities()
 {
     for (int i=0; i<this->priorityActions.size(); ++i) {

@@ -56,6 +56,7 @@ class PlayerCharacter : public Combatant
     Item *ammoItem = nullptr;
 public:
     PlayerCharacter();
+    ~PlayerCharacter();
     int32_t getArmor() const;
     void setArmor(const int32_t &value);
     int32_t getSpirit() const;
@@ -98,8 +99,9 @@ public:
     void setMainHandItem(Item *value);
     Item *getOffHandItem() const;
     void setOffHandItem(Item *value);
-    PlayerClass getPlayerClass() const;
+    PlayerClass &getPlayerClass();
     void setPlayerClass(const PlayerClass &value);
+    void initResourceValue();
     int32_t getLevel() const;
     void setLevel(const int32_t &value);
     int32_t getResource() const;
@@ -114,6 +116,7 @@ public:
     void setPlayerRace(const std::string &value);
     PriorityActionList *getPriorityActionList() const;
     void setPriorityActionList(PriorityActionList *value);
+    void resetAllTalentTimestamps();
 };
 
 #endif // PLAYERCHARACTER_H

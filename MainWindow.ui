@@ -19,11 +19,29 @@
      <widget class="QPlainTextEdit" name="simOutput"/>
     </item>
     <item row="1" column="0">
-     <widget class="QPushButton" name="simButton">
-      <property name="text">
-       <string>Simulate</string>
-      </property>
-     </widget>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QPushButton" name="characterButton">
+        <property name="text">
+         <string>Character</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="actionsButton">
+        <property name="text">
+         <string>Actions</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="simButton">
+        <property name="text">
+         <string>Simulate</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
