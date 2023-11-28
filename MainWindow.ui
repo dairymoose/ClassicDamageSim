@@ -28,6 +28,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="talentsButton">
+        <property name="text">
+         <string>Talents</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="actionsButton">
         <property name="text">
          <string>Actions</string>

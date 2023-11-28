@@ -7,6 +7,7 @@
 #include "CharacterSheet.h"
 #include "DamageSimulation.h"
 #include "PlayerCharacter.h"
+#include "TalentsDialog.h"
 
 namespace Ui {
 class MainWindow;
@@ -26,6 +27,8 @@ private slots:
     
     void on_characterButton_clicked();
     
+    void on_talentsButton_clicked();
+    
 private:
     void simSetup();
     void simCleanup();
@@ -40,6 +43,7 @@ private:
     
     ActionsDialog *actionsDialog = new ActionsDialog();
     CharacterSheet *characterSheet = new CharacterSheet();
+    TalentsDialog *talentsDialog = new TalentsDialog();
 };
 
 #endif // MAINWINDOW_H

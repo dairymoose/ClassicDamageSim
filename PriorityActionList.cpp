@@ -17,6 +17,7 @@ PriorityAction *PriorityActionList::getNextAction(PlayerCharacter *PC, float tim
         return nullptr;
     }
     
+    bool showFailureReason = false;
     FailureReason failureReason;
     for (int i=0; i<this->priorityActions.size(); ++i) {
         bool shouldCheckAbility = true;
@@ -25,6 +26,10 @@ PriorityAction *PriorityActionList::getNextAction(PlayerCharacter *PC, float tim
             if (!shouldCheckAbility) {
                 failureReason = FailureReason::Predicate;
             }
+        }
+        if (this->priorityActions[i]->getDisabled()) {
+            shouldCheckAbility = false;
+            failureReason = FailureReason::Disabled;
         }
         if (shouldCheckAbility) {
             if (this->priorityActions[i]->getAbility() != nullptr) {
@@ -61,6 +66,9 @@ PriorityAction *PriorityActionList::getNextAction(PlayerCharacter *PC, float tim
             }
         }
         
+        if (failureReason != FailureReason::Success) {
+            //std::cout<<this->priorityActions[i]->getAbility()->getName()<<" failed due to "<<(int)failureReason<<'\n';
+        }
         if (failureReason == FailureReason::OutOfResource) {
             //Do not try lower priority skills if we were out of resource
             break;

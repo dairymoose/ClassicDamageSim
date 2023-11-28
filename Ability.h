@@ -29,6 +29,7 @@ class Ability
     int32_t resourceCost = 0;
     int32_t aoeMaxTargets = 0;
     float castTime = 0.0f;
+    bool castedAbilityResetsAutoAttack = true;
 public:
     Ability(std::string name);
     
@@ -73,6 +74,8 @@ public:
     void setResourceGenerationFunction(const std::function<int32_t (PlayerCharacter *PC, int32_t abilityRank, int32_t damageDone, bool isCritical)> &value);
     float getCastTime() const;
     void setCastTime(float value);
+    bool getCastedAbilityResetsAutoAttack() const;
+    void setCastedAbilityResetsAutoAttack(bool value);
 };
 
 #endif // ABILITY_H

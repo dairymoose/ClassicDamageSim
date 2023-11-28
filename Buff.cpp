@@ -31,6 +31,16 @@ void Buff::setParent(Ability *value)
     parent = value;
 }
 
+std::function<void (Combatant *Caster, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration)> Buff::getOnBuffTick() const
+{
+    return onBuffTick;
+}
+
+void Buff::setOnBuffTick(const std::function<void (Combatant *Caster, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration)> &value)
+{
+    onBuffTick = value;
+}
+
 Buff::Buff(std::string name, Ability *parent)
 {
     this->name = name;

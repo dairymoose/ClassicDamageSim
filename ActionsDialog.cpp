@@ -76,12 +76,14 @@ void ActionsDialog::addPriorityActionUi(PriorityAction *action, std::string name
     if (abilityIconLabel != nullptr) {
         abilityIconLabel->setPixmap(QPixmap(QString::fromStdString(abilityIcon)));
     }
-    if (condition.length() > 0) {
-        QPushButton *cond = SPA->findChild<QPushButton *>("conditionButton");
-        if (cond != nullptr) {
+    QPushButton *cond = SPA->findChild<QPushButton *>("conditionButton");
+    if (cond != nullptr) {
+        if (condition.length() > 0) {
             cond->setEnabled(true);
             cond->setProperty("predicate", QString::fromStdString(condition));
             connect(cond, &QPushButton::clicked, this, &ActionsDialog::handleConditionsButtonClicked);
+        } else {
+            cond->setHidden(true);
         }
     }
     if (this->isClassActionDialog) {
@@ -96,7 +98,7 @@ void ActionsDialog::addPriorityActionUi(PriorityAction *action, std::string name
             downBtn->hide();
         }
         if (removeBtn != nullptr) {
-            removeBtn->setIcon(QIcon(QPixmap(":/img/green_check.png")));
+            removeBtn->setIcon(QIcon(QPixmap(":/img/green_plus.png")));
             removeBtn->setToolTip("Add class action to player action list");
         }
     }

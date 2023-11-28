@@ -63,6 +63,30 @@ void PlayerCharacter::setStrength(const int32_t &value)
     strength = value;
 }
 
+void PlayerCharacter::disableAutoAttack()
+{
+    PriorityAction *mhAttack = this->getPriorityActionList()->getActionFromAbilityName("Main-hand attack");
+    PriorityAction *ohAttack = this->getPriorityActionList()->getActionFromAbilityName("Off-hand attack");
+    if (mhAttack)
+        mhAttack->setDisabled(true);
+    if (ohAttack)
+        ohAttack->setDisabled(true);
+}
+
+void PlayerCharacter::enableAndResetAutoAttack(float timestamp)
+{
+    PriorityAction *mhAttack = this->getPriorityActionList()->getActionFromAbilityName("Main-hand attack");
+    PriorityAction *ohAttack = this->getPriorityActionList()->getActionFromAbilityName("Off-hand attack");
+    if (mhAttack) {
+        mhAttack->setDisabled(false);
+        mhAttack->getAbility()->triggerCooldown(this, timestamp, false);
+    }
+    if (ohAttack) {
+        ohAttack->setDisabled(false);
+        ohAttack->getAbility()->triggerCooldown(this, timestamp, false);
+    }
+}
+
 void PlayerCharacter::addTalent(std::string name, int32_t rank)
 {
     this->talents.push_back(new Talent(name, rank));
@@ -108,6 +132,55 @@ int32_t PlayerCharacter::applyMeleeApBuffs(int32_t AP)
         }
     }
     return AP;
+}
+
+//strictly less than 1
+float PlayerCharacter::getRandomFloat()
+{
+    std::uniform_real_distribution<> dist(0.0f, 1.0f);
+    return dist(DamageSimulation::getRandEngine());
+}
+
+int32_t PlayerCharacter::maybeApplyCritDamage(Ability *source, int32_t value, bool& didCrit)
+{
+    if (this->canCrit) {
+        if (this->alwaysUseAverageDamage && this->bakeCritIntoAverageDamage) {
+            float nonCritPortion = 1.0f - this->critChance;
+            float critPortion = this->critChance;
+            int32_t weightedAverage = nonCritPortion*value + critPortion*(value*this->getCritStrikeDamageMultiplier(this->isWhiteAttack(source)));
+            return weightedAverage;
+        } else {
+            float critDiceRoll = this->getRandomFloat();
+            if (critDiceRoll < this->critChance) {
+                didCrit = true;
+            }
+            if (didCrit)
+                value *= this->getCritStrikeDamageMultiplier(this->isWhiteAttack(source));
+            return value;
+        }
+    }
+    return value;
+}
+
+bool PlayerCharacter::isWhiteAttack(Ability *ability)
+{
+    if (ability != nullptr) {
+        if (ability->getName() == "Main-hand attack" || ability->getName() == "Off-hand attack") {
+            return true;
+        }
+    }
+    return false;
+}
+
+float PlayerCharacter::getCritStrikeDamageMultiplier(bool whiteAttack)
+{
+    if (!whiteAttack) {
+        int32_t impale = this->getTalentRank("Impale");
+        if (impale > 0) {
+            return (this->baseCritStrikeDamageMultipier + 0.10f*impale);
+        }
+    }
+    return this->baseCritStrikeDamageMultipier;
 }
 
 float PlayerCharacter::calculateGlobalDamageBonus()

@@ -14,5 +14,8 @@
         <file>main-hand_attack.jpg</file>
         <file>off-hand_attack.jpg</file>
         <file>execute.jpg</file>
+        <file>green_plus.png</file>
+        <file>bloodrage.jpg</file>
+        <file>talents.png</file>
     </qresource>
 </RCC>

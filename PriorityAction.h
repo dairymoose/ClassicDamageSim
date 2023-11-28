@@ -18,6 +18,7 @@ class PriorityAction
     std::string predicateText = "";
     std::string nameOverride = "";
     std::string internalName = "";
+    bool disabled = false;
 public:
     PriorityAction(Ability *ability, int32_t rank=1);
     Ability *getAbility() const;
@@ -39,6 +40,8 @@ public:
     }
     std::string getInternalName() const;
     void setInternalName(const std::string &value);
+    bool getDisabled() const;
+    void setDisabled(bool value);
 };
 
 #endif // PRIORITYACTION_H

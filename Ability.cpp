@@ -192,6 +192,16 @@ void Ability::setCastTime(float value)
     castTime = value;
 }
 
+bool Ability::getCastedAbilityResetsAutoAttack() const
+{
+    return castedAbilityResetsAutoAttack;
+}
+
+void Ability::setCastedAbilityResetsAutoAttack(bool value)
+{
+    castedAbilityResetsAutoAttack = value;
+}
+
 Ability::Ability(std::string name)
 {
     this->name = name;

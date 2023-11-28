@@ -26,11 +26,11 @@ void MainWindow::simSetup()
         PC->setIntellect(26);
         PC->setSpirit(59);
         PC->setArmor(1310);
-        PC->setAlwaysUseAverageDamage(true);
         PC->addTalent("Two-Handed Weapon Specialization", 4); 
         PC->addTalent("Improved Charge", 2);
         PC->addTalent("Anger Management", 1);
         PC->addTalent("Improved Rend", 3);
+        PC->addTalent("Impale", 2);
         Weapon *twoHander = new Weapon();
         twoHander->setMinDamage(92);
         twoHander->setMaxDamage(139);
@@ -97,6 +97,12 @@ void MainWindow::simSetup()
             PA->setInternalName("rend");
             //PA->setPredicate([=](PlayerCharacter *PC, float timestamp){return !PC->getTarget()->hasDebuff(gal->Rend->getGrantedDebuff());});
             SET_PREDICATE_WITH_TEXT(PA, [=](PlayerCharacter *PC, float timestamp){return !PC->getTarget()->hasDebuff(gal->Rend->getGrantedDebuff());});
+            availableActionsForClass->getPriorityActions().push_back(PA);
+        }
+        {
+            PriorityAction *PA = new PriorityAction(gal->Bloodrage, 1);
+            PA->setInternalName("bloodrage");
+            SET_PREDICATE_WITH_TEXT(PA, [=](PlayerCharacter *PC, float timestamp){return !PC->getTarget()->hasBuff(gal->Bloodrage->getGrantedBuff());});
             availableActionsForClass->getPriorityActions().push_back(PA);
         }
         {
@@ -186,4 +192,12 @@ void MainWindow::on_characterButton_clicked()
     characterSheet->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
     //characterSheet->setModal(true);
     characterSheet->show();
+}
+
+void MainWindow::on_talentsButton_clicked()
+{
+    this->simSetup();
+    
+    //talentsDialog->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
+    talentsDialog->show();
 }

@@ -38,6 +38,8 @@ protected:
     
     std::vector<AppliedBuff *> Buffs;
     std::vector<AppliedBuff *> Debuffs;
+    
+    int32_t applyDamageInternal(std::string damageTypeText, Combatant *attacker, int32_t damage, bool isCritical, float timestamp, Ability *abilitySource);
 public:
     Combatant();
     virtual ~Combatant();
@@ -49,10 +51,11 @@ public:
     bool isSpellcastFinished(float timestamp);
     void triggerSpellcastFinished();
     void applyDotDamage(PlayerCharacter *PC, float timestamp);
-    int32_t applyDamage(Combatant *attacker, int32_t damage, float timestamp, Ability *abilitySource);
-    int32_t applyPhysicalDamage(Combatant *attacker, int32_t damage, float timestamp, Ability *abilitySource);
-    int32_t applyMagicalDamage(Combatant *attacker, int32_t damage, float timestamp, Ability *abilitySource);
-    int32_t applyArmorIgnoreDamage(Combatant *attacker, int32_t damage, float timestamp, Ability *abilitySource);
+    void tickBuffs(PlayerCharacter *PC, float timestamp);
+    int32_t applyDamage(Combatant *attacker, int32_t damage, bool isCritical, float timestamp, Ability *abilitySource);
+    int32_t applyPhysicalDamage(Combatant *attacker, int32_t damage, bool isCritical, float timestamp, Ability *abilitySource);
+    int32_t applyMagicalDamage(Combatant *attacker, int32_t damage, bool isCritical, float timestamp, Ability *abilitySource);
+    int32_t applyArmorIgnoreDamage(Combatant *attacker, int32_t damage, bool isCritical, float timestamp, Ability *abilitySource);
     void applyBuff(Combatant *attacker, float timestamp, Buff *buff, bool isFree);
     void applyDebuff(Combatant *attacker, float timestamp, Buff *debuff);
     bool isDead();

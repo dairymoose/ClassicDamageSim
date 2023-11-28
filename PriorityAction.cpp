@@ -27,6 +27,8 @@ void PriorityAction::execute(PlayerCharacter *PC, std::vector<Enemy *> &enemyLis
         this->getAbility()->triggerResourceCost(PC, timestamp);
         float damage = this->getAbility()->getDamage(PC);
         damage *= PC->calculateGlobalDamageBonus();
+        bool isCritical;
+        damage = PC->maybeApplyCritDamage(this->getAbility(), damage, isCritical);
         
         this->getAbility()->triggerCooldown(PC, timestamp, this->getIgnoreGcd());
         int32_t resourceBefore = PC->getResource();
@@ -37,18 +39,12 @@ void PriorityAction::execute(PlayerCharacter *PC, std::vector<Enemy *> &enemyLis
                     if (i >= enemyList.size()) {
                         break;
                     }
-                    damageDone += enemyList[i]->applyDamage(PC, damage, timestamp, this->getAbility());
+                    damageDone += enemyList[i]->applyDamage(PC, damage, isCritical, timestamp, this->getAbility());
                 }
             }
             else {
-                damageDone += PC->getTarget()->applyDamage(PC, damage, timestamp, this->getAbility());
+                damageDone += PC->getTarget()->applyDamage(PC, damage, isCritical, timestamp, this->getAbility());
             }
-        }
-        this->getAbility()->triggerResourceGeneration(PC, damageDone, false, timestamp);
-        int32_t resourceAfter = PC->getResource();
-        if (resourceAfter > resourceBefore || this->getAbility()->getResourceGenerationFunction() != nullptr) {
-            int32_t resourceDiff = resourceAfter - resourceBefore;
-            COMBAT_LOG(timestamp, PC, "Rage is at "<<PC->getResource()<<" (gained "<<resourceDiff<<" rage)");
         }
         if (this->getAbility()->getGrantedBuff() != nullptr) {
             bool isFree = this->getIgnoreResourceCost() && this->getIgnoreGcd();
@@ -56,6 +52,12 @@ void PriorityAction::execute(PlayerCharacter *PC, std::vector<Enemy *> &enemyLis
         }
         if (this->getAbility()->getGrantedDebuff() != nullptr) {
             PC->getTarget()->applyDebuff(PC, timestamp, this->getAbility()->getGrantedDebuff());
+        }
+        this->getAbility()->triggerResourceGeneration(PC, damageDone, isCritical, timestamp);
+        int32_t resourceAfter = PC->getResource();
+        if (resourceAfter > resourceBefore || this->getAbility()->getResourceGenerationFunction() != nullptr) {
+            int32_t resourceDiff = resourceAfter - resourceBefore;
+            COMBAT_LOG(timestamp, PC, "Rage is at "<<PC->getResource()<<" (gained "<<resourceDiff<<" rage)");
         }
     }
 }
@@ -108,6 +110,16 @@ std::string PriorityAction::getInternalName() const
 void PriorityAction::setInternalName(const std::string &value)
 {
     internalName = value;
+}
+
+bool PriorityAction::getDisabled() const
+{
+    return disabled;
+}
+
+void PriorityAction::setDisabled(bool value)
+{
+    disabled = value;
 }
 
 PriorityAction::PriorityAction(Ability *ability, int32_t rank)

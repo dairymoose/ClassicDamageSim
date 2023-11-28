@@ -61,6 +61,7 @@ void DamageSimulation::simulate(PriorityActionList *priorityActions)
         
         std::vector<Combatant *> combatants;
         this->gatherAllCombatants(combatants);
+        PC->tickBuffs(this->PC, this->time);
         for (auto combatant : combatants) {
             combatant->applyDotDamage(this->PC, this->time);
             combatant->removeExpiredBuffs(this->time);
@@ -70,6 +71,8 @@ void DamageSimulation::simulate(PriorityActionList *priorityActions)
                     COMBAT_LOG(this->time, PC, ATTACKER_FONT_COLOR<<PC->getName()<<END_FONT<<" finished casting "<<ABILITY_FONT_COLOR<<combatant->getCastingAbility()->getName()<<END_FONT);
                     PriorityAction PA(combatant->getCastingAbility());
                     PA.execute(PC, this->enemyList, this->time);
+                    if (combatant->getCastingAbility()->getCastedAbilityResetsAutoAttack())
+                        PC->enableAndResetAutoAttack(this->time);
                     combatant->triggerSpellcastFinished();
                 }
             }
@@ -97,12 +100,8 @@ void DamageSimulation::simulate(PriorityActionList *priorityActions)
                         PC->setCastingAbility(PA->getAbility());
                         PC->setCastStartTime(this->time);
                         PC->setIsCasting(true);
-                        PriorityAction *mhAttack = PC->getPriorityActionList()->getActionFromAbilityName("Main-hand attack");
-                        PriorityAction *ohAttack = PC->getPriorityActionList()->getActionFromAbilityName("Off-hand attack");
-                        if (mhAttack)
-                            mhAttack->getAbility()->triggerCooldown(PC, this->time, false);
-                        if (ohAttack)
-                            ohAttack->getAbility()->triggerCooldown(PC, this->time, false);
+                        if (PA->getAbility()->getCastedAbilityResetsAutoAttack())
+                            PC->disableAutoAttack();
                     } else {
                         PA->execute(this->PC, this->enemyList, this->time);
                     }

@@ -23,9 +23,12 @@ class PlayerCharacter : public Combatant
     
     std::vector<Talent *> talents;
     
-    bool alwaysUseAverageDamage = true;
-    bool canCrit = false;
-    bool bakeCritIntoAverageDamage = true;
+    bool alwaysUseAverageDamage = false;
+    bool canCrit = true;
+    bool bakeCritIntoAverageDamage = false;
+    
+    float baseCritStrikeDamageMultipier = 2.0f;
+    float critChance = 0.05f;
     
     int32_t strength;
     int32_t agility;
@@ -70,6 +73,9 @@ public:
     int32_t getStrength() const;
     void setStrength(const int32_t &value);
     
+    void disableAutoAttack();
+    void enableAndResetAutoAttack(float timestamp);
+    
     void addTalent(std::string name, int32_t rank);
     int32_t getTalentRank(std::string name);
     Talent *getTalent(std::string name);
@@ -77,6 +83,11 @@ public:
     bool hasTwoHandedWeaponEquipped();
     
     int32_t applyMeleeApBuffs(int32_t AP);
+    
+    float getRandomFloat();
+    int32_t maybeApplyCritDamage(Ability *source, int32_t value, bool& didCrit);
+    bool isWhiteAttack(Ability *ability);
+    float getCritStrikeDamageMultiplier(bool whiteAttack);
     
     float calculateGlobalDamageBonus();
     int32_t calculateSimulatedMainhandSwing();

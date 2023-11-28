@@ -43,35 +43,51 @@ void Combatant::triggerSpellcastFinished()
     this->castingAbility = nullptr;
 }
 
-int32_t Combatant::applyPhysicalDamage(Combatant *attacker, int32_t damage, float timestamp, Ability *abilitySource)
+int32_t Combatant::applyPhysicalDamage(Combatant *attacker, int32_t damage, bool isCritical, float timestamp, Ability *abilitySource)
 {
     if (attacker != nullptr) {
         int32_t calcDmg = damage * (1.0f - physicalDamageReduction);
-        COMBAT_LOG(timestamp, attacker, ATTACKER_FONT_COLOR<<attacker->getName()<<END_FONT<<" did "<<DAMAGE_FONT_COLOR<<calcDmg<<END_FONT<<" physical damage to "<<RECEIVER_FONT_COLOR<<this->getName()<<END_FONT<<" from "<<ABILITY_FONT_COLOR<<abilitySource->getName()<<END_FONT);
-        this->currentHp -= calcDmg;
-        attacker->setDamageDone(attacker->getDamageDone() + calcDmg);
-        return calcDmg;
+        //COMBAT_LOG(timestamp, attacker, ATTACKER_FONT_COLOR<<attacker->getName()<<END_FONT<<" did "<<DAMAGE_FONT_COLOR<<calcDmg<<END_FONT<<" physical damage to "<<RECEIVER_FONT_COLOR<<this->getName()<<END_FONT<<" from "<<ABILITY_FONT_COLOR<<abilitySource->getName()<<END_FONT);
+        //this->currentHp -= calcDmg;
+        //attacker->setDamageDone(attacker->getDamageDone() + calcDmg);
+        //return calcDmg;
+        return this->applyDamageInternal("physical", attacker, calcDmg, isCritical, timestamp, abilitySource);
     }
     return 0;
 }
 
-int32_t Combatant::applyMagicalDamage(Combatant *attacker, int32_t damage, float timestamp, Ability *abilitySource)
+int32_t Combatant::applyMagicalDamage(Combatant *attacker, int32_t damage, bool isCritical, float timestamp, Ability *abilitySource)
 {
     if (attacker != nullptr) {
         int32_t calcDmg = damage * (1.0f - magicalDamageReduction);
-        COMBAT_LOG(timestamp, attacker, ATTACKER_FONT_COLOR<<attacker->getName()<<END_FONT<<" did "<<DAMAGE_FONT_COLOR<<calcDmg<<END_FONT<<" magical damage to "<<RECEIVER_FONT_COLOR<<this->getName()<<END_FONT<<" from "<<ABILITY_FONT_COLOR<<abilitySource->getName()<<END_FONT);
-        this->currentHp -= calcDmg;
-        attacker->setDamageDone(attacker->getDamageDone() + calcDmg);
-        return calcDmg;
+        //COMBAT_LOG(timestamp, attacker, ATTACKER_FONT_COLOR<<attacker->getName()<<END_FONT<<" did "<<DAMAGE_FONT_COLOR<<calcDmg<<END_FONT<<" magical damage to "<<RECEIVER_FONT_COLOR<<this->getName()<<END_FONT<<" from "<<ABILITY_FONT_COLOR<<abilitySource->getName()<<END_FONT);
+        //this->currentHp -= calcDmg;
+        //attacker->setDamageDone(attacker->getDamageDone() + calcDmg);
+        //return calcDmg;
+        return this->applyDamageInternal("magical", attacker, calcDmg, isCritical, timestamp, abilitySource);
     }
     return 0;
 }
 
-int32_t Combatant::applyArmorIgnoreDamage(Combatant *attacker, int32_t damage, float timestamp, Ability *abilitySource)
+int32_t Combatant::applyArmorIgnoreDamage(Combatant *attacker, int32_t damage, bool isCritical, float timestamp, Ability *abilitySource)
 {
     if (attacker != nullptr) {
         int32_t calcDmg = damage;
-        COMBAT_LOG(timestamp, attacker, ATTACKER_FONT_COLOR<<attacker->getName()<<END_FONT<<" did "<<DAMAGE_FONT_COLOR<<calcDmg<<END_FONT<<" armor-ignore damage to "<<RECEIVER_FONT_COLOR<<this->getName()<<END_FONT<<" from "<<ABILITY_FONT_COLOR<<abilitySource->getName()<<END_FONT);
+        //COMBAT_LOG(timestamp, attacker, ATTACKER_FONT_COLOR<<attacker->getName()<<END_FONT<<" did "<<DAMAGE_FONT_COLOR<<calcDmg<<END_FONT<<" armor-ignore damage to "<<RECEIVER_FONT_COLOR<<this->getName()<<END_FONT<<" from "<<ABILITY_FONT_COLOR<<abilitySource->getName()<<END_FONT);
+        //this->currentHp -= damage;
+        //attacker->setDamageDone(attacker->getDamageDone() + calcDmg);
+        //return calcDmg;
+        return this->applyDamageInternal("armor-ignore", attacker, calcDmg, isCritical, timestamp, abilitySource);
+    }
+    return 0;
+}
+
+
+int32_t Combatant::applyDamageInternal(std::string damageTypeText, Combatant *attacker, int32_t damage, bool isCritical, float timestamp, Ability *abilitySource)
+{
+    if (attacker != nullptr) {
+        int32_t calcDmg = damage;
+        COMBAT_LOG(timestamp, attacker, ATTACKER_FONT_COLOR<<attacker->getName()<<END_FONT<<" did "<<DAMAGE_FONT_COLOR<<calcDmg<<END_FONT<<(isCritical ? " *CRITICAL*" : "")<<" "<<damageTypeText<<" damage to "<<RECEIVER_FONT_COLOR<<this->getName()<<END_FONT<<" from "<<ABILITY_FONT_COLOR<<abilitySource->getName()<<END_FONT);
         this->currentHp -= damage;
         attacker->setDamageDone(attacker->getDamageDone() + calcDmg);
         return calcDmg;
@@ -194,31 +210,44 @@ void Combatant::applyDotDamage(PlayerCharacter *PC, float timestamp)
                 buff->triggerTickTimer(timestamp);
                 float buffDuration = buff->getCapturedDuration();
                 int32_t damage = buff->getBuff()->getOnDotTickDamage()(PC, this, buff->getBuff()->getParent()->getRank(), buff->getTickCount(), buffDuration);
-                this->applyDamage((Combatant *)PC, damage, timestamp, buff->getBuff()->getParent());
+                this->applyDamage((Combatant *)PC, damage, false, timestamp, buff->getBuff()->getParent());
             }
         }
-//        int32_t lastTickCount = buff->getLastTickedCount();
-//        int32_t newTickCount = buff->getTimesTicked(this, timestamp);
-//        if (newTickCount > lastTickCount) {
-//            int32_t damage = buff->getOnDotTickDamage()(this, buff->getParent()->getRank(), newTickCount);
-//            this->applyDamage((Combatant *)PC, damage, timestamp, buff->getParent());
-//        }
     }
 }
 
-int32_t Combatant::applyDamage(Combatant *attacker, int32_t damage, float timestamp, Ability *abilitySource)
+void Combatant::tickBuffs(PlayerCharacter *PC, float timestamp)
+{
+    for (auto buff : this->Buffs) {
+        if (buff->getBuff()->getOnBuffTick() != nullptr) {
+            if (buff->isTickTimerExpired(this, timestamp)) {
+                buff->triggerTickTimer(timestamp);
+                float buffDuration = buff->getCapturedDuration();
+                int32_t resourceBefore = PC->getResource();
+                buff->getBuff()->getOnBuffTick()(PC, this, buff->getBuff()->getParent()->getRank(), buff->getTickCount(), buffDuration);
+                int32_t resourceAfter = PC->getResource();
+                if (resourceAfter > resourceBefore) {
+                    int32_t resourceDiff = resourceAfter - resourceBefore;
+                    COMBAT_LOG(timestamp, PC, ATTACKER_FONT_COLOR<<PC->getName()<<END_FONT<<" gained "<<resourceDiff<<" rage from "<<ABILITY_FONT_COLOR<<buff->getBuff()->getName()<<END_FONT);
+                }
+            }
+        }
+    }
+}
+
+int32_t Combatant::applyDamage(Combatant *attacker, int32_t damage, bool isCritical, float timestamp, Ability *abilitySource)
 {
     if (abilitySource != nullptr) {
         if (abilitySource->getIgnoresArmor()) {
-            return this->applyArmorIgnoreDamage(attacker, damage, timestamp, abilitySource);
+            return this->applyArmorIgnoreDamage(attacker, damage, isCritical, timestamp, abilitySource);
         }
         else {
             if (abilitySource->getAbilityDamageType() == AbilityDamageType::Physical) {
-                return this->applyPhysicalDamage(attacker, damage, timestamp, abilitySource);
+                return this->applyPhysicalDamage(attacker, damage, isCritical, timestamp, abilitySource);
             } else if (abilitySource->getAbilityDamageType() == AbilityDamageType::Magical) {
-                return this->applyMagicalDamage(attacker, damage, timestamp, abilitySource);
+                return this->applyMagicalDamage(attacker, damage, isCritical, timestamp, abilitySource);
             } else {
-                return this->applyArmorIgnoreDamage(attacker, damage, timestamp, abilitySource);
+                return this->applyArmorIgnoreDamage(attacker, damage, isCritical, timestamp, abilitySource);
             }
         }
     }

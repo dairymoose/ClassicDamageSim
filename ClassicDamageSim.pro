@@ -42,6 +42,7 @@ SOURCES += \
         PriorityActionList.cpp \
         SingularPriorityAction.cpp \
         Talent.cpp \
+        TalentsDialog.cpp \
         Weapon.cpp \
         main.cpp \
         MainWindow.cpp
@@ -67,13 +68,15 @@ HEADERS += \
         PriorityActionList.h \
         SingularPriorityAction.h \
         Talent.h \
+        TalentsDialog.h \
         Weapon.h
 
 FORMS += \
         ActionsDialog.ui \
         CharacterSheet.ui \
         MainWindow.ui \
-        SingularPriorityAction.ui
+        SingularPriorityAction.ui \
+        TalentsDialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

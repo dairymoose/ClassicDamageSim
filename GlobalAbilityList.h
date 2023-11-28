@@ -18,6 +18,7 @@ public:
     Ability *Slam = nullptr;
     Ability *Execute = nullptr;
     Ability *Charge = nullptr;
+    Ability *Bloodrage = nullptr;
     
     bool didPrintStats = false;
     bool didCharge = false;

@@ -145,6 +145,17 @@ GlobalAbilityList::GlobalAbilityList()
     this->Charge->setResourceGenerationFunction([](PlayerCharacter *PC, int32_t rank, int32_t damageDone, bool isCritical){ int32_t impCharge = PC->getTalentRank("Improved Charge"); return 9 + (3*(rank-1)) + impCharge*3; });
     this->Charge->setCanUseFunction([&](PlayerCharacter *PC, int32_t rank){ if (!didCharge && PC->getDamageDone() == 0) {didCharge = true; return true;} return false; });
     this->Charge->setCooldownFunction([](PlayerCharacter *PC, int32_t rank){ return 15; });
-    this->Charge->setCastTime(0.4f);
+    this->Charge->setCastTime(0.01f);
     this->Charge->setIsGcdAbility(false);
+    this->Charge->setCastedAbilityResetsAutoAttack(false);
+    
+    this->Bloodrage = new Ability("Bloodrage");
+    this->Bloodrage->setResourceGenerationFunction([](PlayerCharacter *PC, int32_t rank, int32_t damageDone, bool isCritical){ return 10; });
+    this->Bloodrage->setCooldownFunction([](PlayerCharacter *PC, int32_t rank){ return 60; });
+    this->Bloodrage->setIsGcdAbility(false);
+    Buff *BloodrageBuff = new Buff("Bloodrage", this->Rend);
+    BloodrageBuff->setOnCalculateDuration([&](Combatant *Cbt, int32_t rank){return 10;});
+    BloodrageBuff->setOnCalculateDotTickPeriod([](Combatant *Cbt){ return 1; });
+    BloodrageBuff->setOnBuffTick([](Combatant *Source, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration){ if (PlayerCharacter *PC = dynamic_cast<PlayerCharacter *>(Source)){PC->setResource(PC->getResource() + 1);} });
+    this->Bloodrage->setGrantedBuff(BloodrageBuff);
 }

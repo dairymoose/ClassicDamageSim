@@ -12,6 +12,7 @@ class Buff
     Ability *parent = nullptr;
     std::function<int32_t(int32_t rank, int32_t attackPowerIn)> onCalculateAttackPower = nullptr;
     std::function<int32_t (Combatant *Caster, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration)> onDotTickDamage = nullptr;
+    std::function<void (Combatant *Caster, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration)> onBuffTick = nullptr;
     std::function<int32_t (Combatant *Cbt)> onCalculateDotTickPeriod = [](Combatant *Cbt){return 3;};
     std::function<float (Combatant *Cbt, int32_t rank)> onCalculateDuration = nullptr;
 public:
@@ -28,6 +29,8 @@ public:
     void setOnCalculateDuration(const std::function<float (Combatant *Cbt, int32_t rank)> &value);
     Ability *getParent() const;
     void setParent(Ability *value);
+    std::function<void (Combatant *Caster, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration)> getOnBuffTick() const;
+    void setOnBuffTick(const std::function<void (Combatant *Caster, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration)> &value);
 };
 
 #endif // BUFF_H

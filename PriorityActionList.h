@@ -4,13 +4,14 @@
 #include <vector>
 #include "PriorityAction.h"
 
-enum class FailureReason {
+enum class FailureReason : uint8_t {
     Success,
     Predicate,
     Cooldown,
     GCD,
     OutOfResource,
-    CanUseCondition
+    CanUseCondition,
+    Disabled
 };
 
 
