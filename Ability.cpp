@@ -207,6 +207,26 @@ std::vector<int32_t> &Ability::getLearnLevels()
     return learnLevels;
 }
 
+std::string Ability::getTemporaryRenameAbility() const
+{
+    return temporaryRenameAbility;
+}
+
+void Ability::setTemporaryRenameAbility(const std::string &value)
+{
+    temporaryRenameAbility = value;
+}
+
+bool Ability::getReplacesNextMelee() const
+{
+    return replacesNextMelee;
+}
+
+void Ability::setReplacesNextMelee(bool value)
+{
+    replacesNextMelee = value;
+}
+
 Ability::Ability(std::string name)
 {
     this->name = name;

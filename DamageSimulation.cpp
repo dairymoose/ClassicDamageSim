@@ -102,8 +102,16 @@ void DamageSimulation::simulate(PriorityActionList *priorityActions)
                         PC->setIsCasting(true);
                         if (PA->getAbility()->getCastedAbilityResetsAutoAttack())
                             PC->disableAutoAttack();
+                    } else if (PA->getAbility() != nullptr && PA->getAbility()->getReplacesNextMelee()) {
+                        PC->setReplaceMeleeAction(PA);
                     } else {
-                        PA->execute(this->PC, this->enemyList, this->time);
+                        if (PA->isMainhandAutoAttack() && PC->getReplaceMeleeAction() != nullptr) {
+                            PC->getReplaceMeleeAction()->execute(this->PC, this->enemyList, this->time);
+                            PC->setReplaceMeleeAction(nullptr);
+                            PA->getAbility()->triggerCooldown(PC, this->time, PA->getIgnoreGcd());
+                        } else {
+                            PA->execute(this->PC, this->enemyList, this->time);
+                        }
                     }
                     if (this->allEnemiesAreDead()) {
                         break;

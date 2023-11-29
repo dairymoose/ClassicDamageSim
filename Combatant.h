@@ -11,6 +11,7 @@
 
 #define COMBAT_LOG(timestamp, attacker, text) ({std::stringstream ss;ss<<FONT_BLUE<<"["<<std::fixed<<std::setprecision(1)<<timestamp<<"]"<<END_FONT<<" "<<text;attacker->getCombatLog()->getLogText().push_back(ss.str());})
 class Ability;
+class PriorityAction;
 
 class Combatant
 {
@@ -38,6 +39,8 @@ protected:
     
     std::vector<AppliedBuff *> Buffs;
     std::vector<AppliedBuff *> Debuffs;
+    
+    PriorityAction *replaceMeleeAction = nullptr;
     
     int32_t applyDamageInternal(std::string damageTypeText, Combatant *attacker, int32_t damage, bool isCritical, float timestamp, Ability *abilitySource);
 public:
@@ -88,6 +91,8 @@ public:
     void setCastingAbility(Ability *value);
     float getCastStartTime() const;
     void setCastStartTime(float value);
+    PriorityAction *getReplaceMeleeAction() const;
+    void setReplaceMeleeAction(PriorityAction *value);
 };
 
 #endif // COMBATANT_H

@@ -11,6 +11,7 @@ class PlayerCharacter;
 class Ability
 {
     std::string name;
+    std::string temporaryRenameAbility = "";
     AbilityDamageType abilityDamageType = AbilityDamageType::Other;
     bool ignoresArmor = false;
     int32_t rank = 1;
@@ -22,6 +23,8 @@ class Ability
     bool isGcdAbility = true;
     Buff *GrantedBuff = nullptr;
     Buff *GrantedDebuff = nullptr;
+    
+    bool replacesNextMelee = false;
     
     float lastUsedTimestamp = 0.0f;
     bool isCoolingDown = false;
@@ -79,6 +82,10 @@ public:
     bool getCastedAbilityResetsAutoAttack() const;
     void setCastedAbilityResetsAutoAttack(bool value);
     std::vector<int32_t>& getLearnLevels();
+    std::string getTemporaryRenameAbility() const;
+    void setTemporaryRenameAbility(const std::string &value);
+    bool getReplacesNextMelee() const;
+    void setReplacesNextMelee(bool value);
 };
 
 #endif // ABILITY_H

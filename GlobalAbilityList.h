@@ -19,6 +19,7 @@ public:
     Ability *Execute = nullptr;
     Ability *Charge = nullptr;
     Ability *Bloodrage = nullptr;
+    Ability *HeroicStrike = nullptr;
     
     bool didPrintStats = false;
     bool didCharge = false;

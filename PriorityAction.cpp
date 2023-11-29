@@ -122,6 +122,27 @@ void PriorityAction::setDisabled(bool value)
     disabled = value;
 }
 
+bool PriorityAction::isMainhandAutoAttack()
+{
+    if (this->getInternalName() == "mainhand_auto") {
+        return true;
+    }
+    return false;
+}
+
+bool PriorityAction::isOffhandAutoAttack()
+{
+    if (this->getInternalName() == "offhand_auto") {
+        return true;
+    }
+    return false;
+}
+
+bool PriorityAction::isAnyAutoAttack()
+{
+    return this->isMainhandAutoAttack() || this->isOffhandAutoAttack();
+}
+
 PriorityAction::PriorityAction(Ability *ability, int32_t rank)
 {
     this->ability = ability;

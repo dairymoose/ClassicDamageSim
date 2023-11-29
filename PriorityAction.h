@@ -42,6 +42,9 @@ public:
     void setInternalName(const std::string &value);
     bool getDisabled() const;
     void setDisabled(bool value);
+    bool isMainhandAutoAttack();
+    bool isOffhandAutoAttack();
+    bool isAnyAutoAttack();
 };
 
 #endif // PRIORITYACTION_H

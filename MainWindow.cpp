@@ -122,6 +122,11 @@ void MainWindow::simSetup()
             SET_PREDICATE_WITH_TEXT(PA, [](PlayerCharacter *PC, float timestamp){if (PC->getPriorityActionList()->getActionFromAbilityName("Main-hand attack")->getAbility()->getTimeSinceLastUsed(timestamp) < 0.20f) return true; return false;});
             availableActionsForClass->getPriorityActions().push_back(PA);
         }
+        {
+            PriorityAction *PA = new PriorityAction(gal->HeroicStrike, 1);
+            PA->setInternalName("heroic_strike");
+            availableActionsForClass->getPriorityActions().push_back(PA);
+        }
     }
     if (PAL == nullptr) {
         PAL = new PriorityActionList();

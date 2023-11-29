@@ -82,12 +82,26 @@ int32_t Combatant::applyArmorIgnoreDamage(Combatant *attacker, int32_t damage, b
     return 0;
 }
 
+PriorityAction *Combatant::getReplaceMeleeAction() const
+{
+    return replaceMeleeAction;
+}
+
+void Combatant::setReplaceMeleeAction(PriorityAction *value)
+{
+    replaceMeleeAction = value;
+}
 
 int32_t Combatant::applyDamageInternal(std::string damageTypeText, Combatant *attacker, int32_t damage, bool isCritical, float timestamp, Ability *abilitySource)
 {
     if (attacker != nullptr) {
         int32_t calcDmg = damage;
-        COMBAT_LOG(timestamp, attacker, ATTACKER_FONT_COLOR<<attacker->getName()<<END_FONT<<" did "<<DAMAGE_FONT_COLOR<<calcDmg<<END_FONT<<(isCritical ? " *CRITICAL*" : "")<<" "<<damageTypeText<<" damage to "<<RECEIVER_FONT_COLOR<<this->getName()<<END_FONT<<" from "<<ABILITY_FONT_COLOR<<abilitySource->getName()<<END_FONT);
+        std::string abilityName = abilitySource->getName();
+        if (abilitySource->getTemporaryRenameAbility().length() > 0) {
+            abilityName = abilitySource->getTemporaryRenameAbility();
+            abilitySource->setTemporaryRenameAbility("");
+        }
+        COMBAT_LOG(timestamp, attacker, ATTACKER_FONT_COLOR<<attacker->getName()<<END_FONT<<" did "<<DAMAGE_FONT_COLOR<<calcDmg<<END_FONT<<(isCritical ? " *CRITICAL*" : "")<<" "<<damageTypeText<<" damage to "<<RECEIVER_FONT_COLOR<<this->getName()<<END_FONT<<" from "<<ABILITY_FONT_COLOR<<abilityName<<END_FONT);
         this->currentHp -= damage;
         attacker->setDamageDone(attacker->getDamageDone() + calcDmg);
         return calcDmg;

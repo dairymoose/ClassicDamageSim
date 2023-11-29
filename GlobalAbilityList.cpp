@@ -26,7 +26,9 @@ GlobalAbilityList::GlobalAbilityList()
     
     this->MeleeMainhandAutoAttack = new Ability("Main-hand attack");
     this->MeleeMainhandAutoAttack->setAbilityDamageType(AbilityDamageType::Physical);
-    this->MeleeMainhandAutoAttack->setDamageFunction([](PlayerCharacter *PC, int32_t rank){return PC->calculateSimulatedMainhandSwing();});
+    this->MeleeMainhandAutoAttack->setDamageFunction([](PlayerCharacter *PC, int32_t rank){
+        return PC->calculateSimulatedMainhandSwing();
+    });
     this->MeleeMainhandAutoAttack->setCooldownFunction([](PlayerCharacter *PC, int32_t rank){return PC->calculatedMainhandWeaponSpeed();});
     this->MeleeMainhandAutoAttack->setIsGcdAbility(false);
     this->MeleeMainhandAutoAttack->setResourceGenerationFunction(
@@ -165,4 +167,21 @@ GlobalAbilityList::GlobalAbilityList()
     BloodrageBuff->setOnCalculateDotTickPeriod([](Combatant *Cbt){ return 1; });
     BloodrageBuff->setOnBuffTick([](Combatant *Source, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration){ if (PlayerCharacter *PC = dynamic_cast<PlayerCharacter *>(Source)){PC->setResource(PC->getResource() + 1);} });
     this->Bloodrage->setGrantedBuff(BloodrageBuff);
+    
+    this->HeroicStrike = new Ability("Heroic Strike");
+    this->HeroicStrike->setIsGcdAbility(false);
+    this->HeroicStrike->setAbilityDamageType(AbilityDamageType::Physical);
+    this->HeroicStrike->setDamageFunction([](PlayerCharacter *PC, int32_t rank){int32_t d=0;
+                                                                        if (rank == 1){d=11;}
+                                                                        if (rank == 2){d=21;}
+                                                                        if (rank == 3){d=32;}
+                                                                        if (rank == 4){d=44;}
+                                                                        if (rank == 5){d=58;}
+                                                                        if (rank == 6){d=80;}
+                                                                        if (rank == 7){d=111;}
+                                                                        if (rank == 8){d=138;}
+                                                                        if (rank == 9){d=157;}
+                                                                        return PC->calculateSimulatedMainhandSwing() + d;});
+    this->HeroicStrike->setReplacesNextMelee(true);
+    this->HeroicStrike->setResourceCost(15);
 }
