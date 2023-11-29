@@ -183,6 +183,25 @@ float PlayerCharacter::getCritStrikeDamageMultiplier(bool whiteAttack)
     return this->baseCritStrikeDamageMultipier;
 }
 
+void PlayerCharacter::downrankAbilitiesIfRequired()
+{
+    if (this->getPriorityActionList() != nullptr) {
+        for (auto& action : this->getPriorityActionList()->getPriorityActions()) {
+            if (action->getAbility() != nullptr) {
+                std::vector<int32_t>& learnLevels = action->getAbility()->getLearnLevels();
+                for (int i=0; i<learnLevels.size(); ++i) {
+                    int32_t learnLevel = learnLevels[i];
+                    if (this->getLevel() < learnLevel) {
+                        int32_t rank = i;
+                        action->getAbility()->setRank(rank);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
 float PlayerCharacter::calculateGlobalDamageBonus()
 {
     int32_t spec2h = this->getTalentRank("Two-Handed Weapon Specialization");
@@ -239,7 +258,7 @@ float PlayerCharacter::calculateDpsFromAttackPower(int32_t attackPower)
  */
 int32_t PlayerCharacter::calculateMeleeAttackPower()
 {
-    if (this->playerClass.cls == this->playerClass.Warrior) {
+    if (this->playerClass.cls == this->playerClass.WARRIOR) {
         return applyMeleeApBuffs(this->level*3 + (this->strength*2-20));
     }
     return 0;
@@ -385,7 +404,7 @@ void PlayerCharacter::setPlayerClass(const PlayerClass &value)
 
 void PlayerCharacter::initResourceValue()
 {
-    if (this->getPlayerClass().cls == this->getPlayerClass().Warrior) {
+    if (this->getPlayerClass().cls == this->getPlayerClass().WARRIOR) {
         this->setResource(0);
         this->setResourceMax(100);
     } else {
@@ -401,6 +420,8 @@ int32_t PlayerCharacter::getLevel() const
 void PlayerCharacter::setLevel(const int32_t &value)
 {
     level = value;
+    
+    this->downrankAbilitiesIfRequired();
 }
 
 int32_t PlayerCharacter::getResource() const
@@ -475,6 +496,196 @@ void PlayerCharacter::resetAllTalentTimestamps()
     for (int i=0; i<this->talents.size(); ++i) {
         this->talents[i]->setLastUsedTimestamp(0.0f);
     }
+}
+
+float PlayerCharacter::getCritChance() const
+{
+    return critChance;
+}
+
+void PlayerCharacter::setCritChance(float value)
+{
+    critChance = value;
+}
+
+Item *PlayerCharacter::getAmmoItem() const
+{
+    return ammoItem;
+}
+
+void PlayerCharacter::setAmmoItem(Item *value)
+{
+    ammoItem = value;
+}
+
+Item *PlayerCharacter::getRangedItem() const
+{
+    return rangedItem;
+}
+
+void PlayerCharacter::setRangedItem(Item *value)
+{
+    rangedItem = value;
+}
+
+Item *PlayerCharacter::getTrinket2Item() const
+{
+    return trinket2Item;
+}
+
+void PlayerCharacter::setTrinket2Item(Item *value)
+{
+    trinket2Item = value;
+}
+
+Item *PlayerCharacter::getTrinket1Item() const
+{
+    return trinket1Item;
+}
+
+void PlayerCharacter::setTrinket1Item(Item *value)
+{
+    trinket1Item = value;
+}
+
+Item *PlayerCharacter::getFinger2Item() const
+{
+    return finger2Item;
+}
+
+void PlayerCharacter::setFinger2Item(Item *value)
+{
+    finger2Item = value;
+}
+
+Item *PlayerCharacter::getFinger1Item() const
+{
+    return finger1Item;
+}
+
+void PlayerCharacter::setFinger1Item(Item *value)
+{
+    finger1Item = value;
+}
+
+Item *PlayerCharacter::getFeetItem() const
+{
+    return feetItem;
+}
+
+void PlayerCharacter::setFeetItem(Item *value)
+{
+    feetItem = value;
+}
+
+Item *PlayerCharacter::getLegItem() const
+{
+    return legItem;
+}
+
+void PlayerCharacter::setLegItem(Item *value)
+{
+    legItem = value;
+}
+
+Item *PlayerCharacter::getBeltItem() const
+{
+    return beltItem;
+}
+
+void PlayerCharacter::setBeltItem(Item *value)
+{
+    beltItem = value;
+}
+
+Item *PlayerCharacter::getHandItem() const
+{
+    return handItem;
+}
+
+void PlayerCharacter::setHandItem(Item *value)
+{
+    handItem = value;
+}
+
+Item *PlayerCharacter::getWristItem() const
+{
+    return wristItem;
+}
+
+void PlayerCharacter::setWristItem(Item *value)
+{
+    wristItem = value;
+}
+
+Item *PlayerCharacter::getTabardItem() const
+{
+    return tabardItem;
+}
+
+void PlayerCharacter::setTabardItem(Item *value)
+{
+    tabardItem = value;
+}
+
+Item *PlayerCharacter::getShirtItem() const
+{
+    return shirtItem;
+}
+
+void PlayerCharacter::setShirtItem(Item *value)
+{
+    shirtItem = value;
+}
+
+Item *PlayerCharacter::getChestItem() const
+{
+    return chestItem;
+}
+
+void PlayerCharacter::setChestItem(Item *value)
+{
+    chestItem = value;
+}
+
+Item *PlayerCharacter::getBackItem() const
+{
+    return backItem;
+}
+
+void PlayerCharacter::setBackItem(Item *value)
+{
+    backItem = value;
+}
+
+Item *PlayerCharacter::getShoulderItem() const
+{
+    return shoulderItem;
+}
+
+void PlayerCharacter::setShoulderItem(Item *value)
+{
+    shoulderItem = value;
+}
+
+Item *PlayerCharacter::getNeckItem() const
+{
+    return neckItem;
+}
+
+void PlayerCharacter::setNeckItem(Item *value)
+{
+    neckItem = value;
+}
+
+Item *PlayerCharacter::getHeadItem() const
+{
+    return headItem;
+}
+
+void PlayerCharacter::setHeadItem(Item *value)
+{
+    headItem = value;
 }
 
 PlayerCharacter::PlayerCharacter()

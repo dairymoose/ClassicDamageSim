@@ -129,6 +129,10 @@ void MainWindow::simSetup()
         availableActionsForClass->removeExistingAction(PAL->addNewAction(availableActionsForClass->getActionFromInternalName("free_battle_shout")));
         availableActionsForClass->removeExistingAction(PAL->addNewAction(availableActionsForClass->getActionFromInternalName("mainhand_auto")));
         availableActionsForClass->removeExistingAction(PAL->addNewAction(availableActionsForClass->getActionFromInternalName("offhand_auto")));
+        
+        if (this->PC != nullptr) {
+            this->PC->setPriorityActionList(PAL);
+        }
     }
 }
 
@@ -189,6 +193,7 @@ void MainWindow::on_characterButton_clicked()
 {
     this->simSetup();
     
+    characterSheet->setPC(this->PC);
     characterSheet->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
     //characterSheet->setModal(true);
     characterSheet->show();

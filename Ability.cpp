@@ -202,6 +202,11 @@ void Ability::setCastedAbilityResetsAutoAttack(bool value)
     castedAbilityResetsAutoAttack = value;
 }
 
+std::vector<int32_t> &Ability::getLearnLevels()
+{
+    return learnLevels;
+}
+
 Ability::Ability(std::string name)
 {
     this->name = name;

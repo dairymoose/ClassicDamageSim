@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <vector>
 #include "AbilityDamageType.h"
 
 class Buff;
@@ -30,6 +31,7 @@ class Ability
     int32_t aoeMaxTargets = 0;
     float castTime = 0.0f;
     bool castedAbilityResetsAutoAttack = true;
+    std::vector<int32_t> learnLevels;
 public:
     Ability(std::string name);
     
@@ -76,6 +78,7 @@ public:
     void setCastTime(float value);
     bool getCastedAbilityResetsAutoAttack() const;
     void setCastedAbilityResetsAutoAttack(bool value);
+    std::vector<int32_t>& getLearnLevels();
 };
 
 #endif // ABILITY_H

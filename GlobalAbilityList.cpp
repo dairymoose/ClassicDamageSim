@@ -31,7 +31,7 @@ GlobalAbilityList::GlobalAbilityList()
     this->MeleeMainhandAutoAttack->setIsGcdAbility(false);
     this->MeleeMainhandAutoAttack->setResourceGenerationFunction(
                 [](PlayerCharacter *PC, int32_t rank, int32_t damageDone, bool isCritical){
-        if (PC->getPlayerClass().cls == PC->getPlayerClass().Warrior)
+        if (PC->getPlayerClass().cls == PC->getPlayerClass().WARRIOR)
         {
             float d=damageDone;int32_t lvl=PC->getLevel();
             float c=((0.0091107836*lvl*lvl) + 3.225598133*lvl) + 4.2652911;
@@ -88,7 +88,7 @@ GlobalAbilityList::GlobalAbilityList()
     Buff *BattleShoutBuff = new Buff("Battle Shout", this->BattleShout);
     BattleShoutBuff->setOnCalculateDuration([&](Combatant *Cbt, int32_t rank){return 120;});
     BattleShoutBuff->setOnCalculateAttackPower([](int32_t rank, int32_t AP){int32_t b=0;
-                                                                            if (rank == 1) b = 20;
+                                                                            if (rank == 1) b = 15;
                                                                             if (rank == 2) b = 40;
                                                                             if (rank == 3) b = 60;
                                                                             if (rank == 4) b = 94;
@@ -98,6 +98,13 @@ GlobalAbilityList::GlobalAbilityList()
                                                                             return AP + b;});
     this->BattleShout->setResourceCost(10);
     this->BattleShout->setGrantedBuff(BattleShoutBuff);
+    this->BattleShout->getLearnLevels().push_back(1);
+    this->BattleShout->getLearnLevels().push_back(12);
+    this->BattleShout->getLearnLevels().push_back(22);
+    this->BattleShout->getLearnLevels().push_back(32);
+    this->BattleShout->getLearnLevels().push_back(42);
+    this->BattleShout->getLearnLevels().push_back(52);
+    this->BattleShout->getLearnLevels().push_back(60);
     
     this->Whirlwind = new Ability("Whirlwind");
     this->Whirlwind->setAbilityDamageType(AbilityDamageType::Physical);

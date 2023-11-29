@@ -89,6 +89,7 @@ public:
     bool isWhiteAttack(Ability *ability);
     float getCritStrikeDamageMultiplier(bool whiteAttack);
     
+    void downrankAbilitiesIfRequired();
     float calculateGlobalDamageBonus();
     int32_t calculateSimulatedMainhandSwing();
     int32_t calculateSimulatedOffhandSwing();
@@ -106,10 +107,7 @@ public:
     float calculatedMainhandWeaponSpeed();
     float calculatedOffhandWeaponSpeed();
     float calculatedMainhandWeaponDps();
-    Item *getMainHandItem() const;
-    void setMainHandItem(Item *value);
-    Item *getOffHandItem() const;
-    void setOffHandItem(Item *value);
+    
     PlayerClass &getPlayerClass();
     void setPlayerClass(const PlayerClass &value);
     void initResourceValue();
@@ -128,6 +126,49 @@ public:
     PriorityActionList *getPriorityActionList() const;
     void setPriorityActionList(PriorityActionList *value);
     void resetAllTalentTimestamps();
+    float getCritChance() const;
+    void setCritChance(float value);
+    
+    Item *getMainHandItem() const;
+    void setMainHandItem(Item *value);
+    Item *getOffHandItem() const;
+    void setOffHandItem(Item *value);
+    Item *getAmmoItem() const;
+    void setAmmoItem(Item *value);
+    Item *getRangedItem() const;
+    void setRangedItem(Item *value);
+    Item *getTrinket2Item() const;
+    void setTrinket2Item(Item *value);
+    Item *getTrinket1Item() const;
+    void setTrinket1Item(Item *value);
+    Item *getFinger2Item() const;
+    void setFinger2Item(Item *value);
+    Item *getFinger1Item() const;
+    void setFinger1Item(Item *value);
+    Item *getFeetItem() const;
+    void setFeetItem(Item *value);
+    Item *getLegItem() const;
+    void setLegItem(Item *value);
+    Item *getBeltItem() const;
+    void setBeltItem(Item *value);
+    Item *getHandItem() const;
+    void setHandItem(Item *value);
+    Item *getWristItem() const;
+    void setWristItem(Item *value);
+    Item *getTabardItem() const;
+    void setTabardItem(Item *value);
+    Item *getShirtItem() const;
+    void setShirtItem(Item *value);
+    Item *getChestItem() const;
+    void setChestItem(Item *value);
+    Item *getBackItem() const;
+    void setBackItem(Item *value);
+    Item *getShoulderItem() const;
+    void setShoulderItem(Item *value);
+    Item *getNeckItem() const;
+    void setNeckItem(Item *value);
+    Item *getHeadItem() const;
+    void setHeadItem(Item *value);
 };
 
 #endif // PLAYERCHARACTER_H

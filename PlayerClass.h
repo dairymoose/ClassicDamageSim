@@ -25,15 +25,15 @@ public:
     ~PlayerClass() {
     }
     
-    PCLASS(Warrior);
-    PCLASS(Paladin);
-    PCLASS(Shaman);
-    PCLASS(Rogue);
-    PCLASS(Mage);
-    PCLASS(Warlock);
-    PCLASS(Priest);
-    PCLASS(Hunter);
-    PCLASS(Druid);
+    PCLASS(WARRIOR);
+    PCLASS(PALADIN);
+    PCLASS(SHAMAN);
+    PCLASS(ROGUE);
+    PCLASS(MAGE);
+    PCLASS(WARLOCK);
+    PCLASS(PRIEST);
+    PCLASS(HUNTER);
+    PCLASS(DRUID);
     
     uint8_t cls;
     
