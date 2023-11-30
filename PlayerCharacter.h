@@ -15,7 +15,7 @@ class PlayerCharacter : public Combatant
     std::string playerRace = "Human";
     
     Enemy *target = nullptr;
-    PriorityActionList *priorityActionList;
+    PriorityActionList *priorityActionList = nullptr;
     
     int32_t level;
     int32_t resource;

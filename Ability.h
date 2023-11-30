@@ -11,7 +11,7 @@ class PlayerCharacter;
 class Ability
 {
     std::string name;
-    std::string temporaryRenameAbility = "";
+    std::string tooltipText;
     AbilityDamageType abilityDamageType = AbilityDamageType::Other;
     bool ignoresArmor = false;
     int32_t rank = 1;
@@ -20,6 +20,7 @@ class Ability
     std::function<float (PlayerCharacter *PC, int32_t abilityRank)> cooldownFunction = nullptr;
     std::function<float (PlayerCharacter *PC, int32_t abilityRank)> canUseFunction = nullptr;
     std::function<int32_t (PlayerCharacter *PC, int32_t abilityRank, int32_t damageDone, bool isCritical)> resourceGenerationFunction = nullptr;
+    std::function<std::string (std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability)> onGetTooltip = nullptr;
     bool isGcdAbility = true;
     Buff *GrantedBuff = nullptr;
     Buff *GrantedDebuff = nullptr;
@@ -82,10 +83,12 @@ public:
     bool getCastedAbilityResetsAutoAttack() const;
     void setCastedAbilityResetsAutoAttack(bool value);
     std::vector<int32_t>& getLearnLevels();
-    std::string getTemporaryRenameAbility() const;
-    void setTemporaryRenameAbility(const std::string &value);
     bool getReplacesNextMelee() const;
     void setReplacesNextMelee(bool value);
+    std::string getTooltipText() const;
+    void setTooltipText(const std::string &value);
+    std::function<std::string (std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability)> getOnGetTooltip() const;
+    void setOnGetTooltip(const std::function<std::string (std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability)> &value);
 };
 
 #endif // ABILITY_H

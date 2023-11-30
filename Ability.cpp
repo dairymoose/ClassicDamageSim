@@ -207,16 +207,6 @@ std::vector<int32_t> &Ability::getLearnLevels()
     return learnLevels;
 }
 
-std::string Ability::getTemporaryRenameAbility() const
-{
-    return temporaryRenameAbility;
-}
-
-void Ability::setTemporaryRenameAbility(const std::string &value)
-{
-    temporaryRenameAbility = value;
-}
-
 bool Ability::getReplacesNextMelee() const
 {
     return replacesNextMelee;
@@ -225,6 +215,26 @@ bool Ability::getReplacesNextMelee() const
 void Ability::setReplacesNextMelee(bool value)
 {
     replacesNextMelee = value;
+}
+
+std::string Ability::getTooltipText() const
+{
+    return tooltipText;
+}
+
+void Ability::setTooltipText(const std::string &value)
+{
+    tooltipText = value;
+}
+
+std::function<std::string (std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability)> Ability::getOnGetTooltip() const
+{
+    return onGetTooltip;
+}
+
+void Ability::setOnGetTooltip(const std::function<std::string (std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability)> &value)
+{
+    onGetTooltip = value;
 }
 
 Ability::Ability(std::string name)

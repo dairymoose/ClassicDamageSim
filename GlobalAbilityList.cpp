@@ -3,6 +3,7 @@
 #include "PlayerCharacter.h"
 #include "Buff.h"
 #include "DamageSimulation.h"
+#include <regex>
 
 void GlobalAbilityList::resetFields()
 {
@@ -84,6 +85,19 @@ GlobalAbilityList::GlobalAbilityList()
     this->Rend->setIgnoresArmor(true);
     this->Rend->setResourceCost(10);
     this->Rend->setGrantedDebuff(RendDebuff);
+    this->Rend->setTooltipText("Wounds the target causing them to bleed for <dmg> damage over <time> sec.");
+    this->Rend->setOnGetTooltip([](std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability){
+        std::stringstream ssDmg;
+        std::stringstream ssDuration;
+        float duration = ability->getGrantedDebuff()->getOnCalculateDuration()(PC, ability->getRank());
+        ssDuration<<duration;
+        ssDmg<<DamageSimulation::totalDotDamageFromOneTick(
+                   ability->getGrantedDebuff()->getOnDotTickDamage()(PC, PC, ability->getRank(), 1, duration), 
+                   ability->getGrantedDebuff()->getOnCalculateDotTickPeriod()(PC), 
+                   duration);
+        std::string r = std::regex_replace(tooltipText, std::regex("<dmg>"), ssDmg.str());
+        return std::regex_replace(r, std::regex("<time>"), ssDuration.str());
+    });
     
     this->BattleShout = new Ability("Battle Shout");
     this->BattleShout->setAbilityDamageType(AbilityDamageType::Physical);
@@ -107,6 +121,12 @@ GlobalAbilityList::GlobalAbilityList()
     this->BattleShout->getLearnLevels().push_back(42);
     this->BattleShout->getLearnLevels().push_back(52);
     this->BattleShout->getLearnLevels().push_back(60);
+    this->BattleShout->setTooltipText("The warrior shouts, increasing the melee attack power of all party members within 20 yards by <AP>.  Lasts 2 min.");
+    this->BattleShout->setOnGetTooltip([](std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability){
+        std::stringstream ss;
+        ss<<ability->getGrantedBuff()->getOnCalculateAttackPower()(ability->getRank(), 0);
+        return std::regex_replace(tooltipText, std::regex("<AP>"), ss.str());
+    });
     
     this->Whirlwind = new Ability("Whirlwind");
     this->Whirlwind->setAbilityDamageType(AbilityDamageType::Physical);
@@ -114,6 +134,16 @@ GlobalAbilityList::GlobalAbilityList()
     this->Whirlwind->setCooldownFunction([](PlayerCharacter *PC, int32_t rank){return 10;});
     this->Whirlwind->setResourceCost(25);
     this->Whirlwind->setAoeMaxTargets(4);
+    this->Whirlwind->setTooltipText("In a whirlwind of steel you attack up to 4 enemies within 8 yards, causing weapon damage to each enemy. (<dmg> damage)");
+    this->Whirlwind->setOnGetTooltip([](std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability){
+        std::stringstream ssDmg;
+        bool avg = PC->getAlwaysUseAverageDamage();
+        PC->setAlwaysUseAverageDamage(true);
+        ssDmg<<ability->getDamage(PC);
+        PC->setAlwaysUseAverageDamage(avg);
+        std::string r = std::regex_replace(tooltipText, std::regex("<dmg>"), ssDmg.str());
+        return r;
+    });
     
     this->MortalStrike = new Ability("Mortal Strike");
     this->MortalStrike->setAbilityDamageType(AbilityDamageType::Physical);
@@ -125,6 +155,16 @@ GlobalAbilityList::GlobalAbilityList()
                                                                                 return PC->calculateSimulatedMainhandSwing() + d;});
     this->MortalStrike->setCooldownFunction([](PlayerCharacter *PC, int32_t rank){return 6;});
     this->MortalStrike->setResourceCost(30);
+    this->MortalStrike->setTooltipText("A vicious strike that deals <dmg> damage and wounds the target, reducing the effectiveness of any healing by 50% for 10 sec.");
+    this->MortalStrike->setOnGetTooltip([](std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability){
+        std::stringstream ssDmg;
+        bool avg = PC->getAlwaysUseAverageDamage();
+        PC->setAlwaysUseAverageDamage(true);
+        ssDmg<<ability->getDamage(PC);
+        PC->setAlwaysUseAverageDamage(avg);
+        std::string r = std::regex_replace(tooltipText, std::regex("<dmg>"), ssDmg.str());
+        return r;
+    });
     
     this->Slam = new Ability("Slam");
     this->Slam->setCastTime(1.5f);
@@ -167,7 +207,11 @@ GlobalAbilityList::GlobalAbilityList()
     BloodrageBuff->setOnCalculateDotTickPeriod([](Combatant *Cbt){ return 1; });
     BloodrageBuff->setOnBuffTick([](Combatant *Source, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration){ if (PlayerCharacter *PC = dynamic_cast<PlayerCharacter *>(Source)){PC->setResource(PC->getResource() + 1);} });
     this->Bloodrage->setGrantedBuff(BloodrageBuff);
-    
+    this->Bloodrage->setTooltipText("Generates 10 rage at the cost of health, and then generates an additional 10 rage over 10 sec.  The warrior is considered in combat for the duration.");
+    this->Bloodrage->setOnGetTooltip([](std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability){
+        return tooltipText;
+    });
+            
     this->HeroicStrike = new Ability("Heroic Strike");
     this->HeroicStrike->setIsGcdAbility(false);
     this->HeroicStrike->setAbilityDamageType(AbilityDamageType::Physical);

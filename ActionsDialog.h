@@ -43,6 +43,9 @@ public:
     ActionsDialog *getClassActionsDialog() const;
     void setClassActionsDialog(ActionsDialog *value);
     
+    PlayerCharacter *getPC() const;
+    void setPC(PlayerCharacter *value);
+    
 private slots:
     void on_ActionsDialog_rejected();
     
@@ -60,6 +63,7 @@ private:
     PriorityActionList *currentPriorityActionList = nullptr;
     PriorityActionList *classPriorityActionList = nullptr;
     ActionsDialog *classActionsDialog = nullptr;
+    PlayerCharacter *PC = nullptr;
 };
 
 #endif // ACTIONSDIALOG_H

@@ -5,6 +5,7 @@
 #include <regex>
 #include <QPushButton>
 #include <QMessageBox>
+#include "InstantTooltipLabel.h"
 
 ActionsDialog::ActionsDialog(QWidget *parent) :
     QDialog(parent),
@@ -74,6 +75,9 @@ void ActionsDialog::addPriorityActionUi(PriorityAction *action, std::string name
     abilityIcon += ".jpg";
     QLabel *abilityIconLabel = SPA->findChild<QLabel *>("abilityIcon");
     if (abilityIconLabel != nullptr) {
+        InstantTooltipLabel *itl = (InstantTooltipLabel *) abilityIconLabel;
+        itl->setAbility(action->getAbility());
+        itl->setPC(this->PC);
         abilityIconLabel->setPixmap(QPixmap(QString::fromStdString(abilityIcon)));
     }
     QPushButton *cond = SPA->findChild<QPushButton *>("conditionButton");
@@ -114,6 +118,20 @@ ActionsDialog *ActionsDialog::getClassActionsDialog() const
 void ActionsDialog::setClassActionsDialog(ActionsDialog *value)
 {
     classActionsDialog = value;
+}
+
+PlayerCharacter *ActionsDialog::getPC() const
+{
+    return PC;
+}
+
+void ActionsDialog::setPC(PlayerCharacter *value)
+{
+    PC = value;
+    
+    if (this->classActionsDialog != nullptr) {
+        classActionsDialog->setPC(this->getPC());
+    }
 }
 
 PriorityActionList *ActionsDialog::getCurrentPriorityActionList() const
@@ -201,6 +219,7 @@ void ActionsDialog::showEvent(QShowEvent *showEvent)
     
     if (classActionsDialog == nullptr && this->classPriorityActionList != nullptr) {
         classActionsDialog = new ActionsDialog();
+        classActionsDialog->setPC(this->getPC());
         classActionsDialog->setIsClassActionDialog(true);
         classActionsDialog->setBaseActionsDialog(this);
         classActionsDialog->clearAllPriorityActions();

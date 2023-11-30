@@ -43,6 +43,9 @@ public:
     static int32_t dotTickDamageFromTotalDamage(int32_t totalDamage, float tickPeriod, float totalDuration) {
         return DamageSimulation::Round(tickPeriod*totalDamage/totalDuration);
     }
+    static int32_t totalDotDamageFromOneTick(int32_t oneTickDamage, float tickPeriod, float totalDuration) {
+        return DamageSimulation::Round(totalDuration*oneTickDamage/tickPeriod);
+    }
     std::vector<Enemy *>& getEnemyList();
     GlobalAbilityList *getGlobalAbilityList() const;
     void setGlobalAbilityList(GlobalAbilityList *value);

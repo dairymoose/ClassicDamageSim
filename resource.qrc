@@ -18,5 +18,6 @@
         <file>bloodrage.jpg</file>
         <file>talents.png</file>
         <file>heroic_strike.jpg</file>
+        <file>tooltip_frame.png</file>
     </qresource>
 </RCC>

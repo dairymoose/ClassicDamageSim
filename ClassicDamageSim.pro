@@ -26,6 +26,7 @@ CONFIG += c++11
 
 SOURCES += \
         Ability.cpp \
+        AbilityTooltip.cpp \
         ActionsDialog.cpp \
         AppliedBuff.cpp \
         Buff.cpp \
@@ -35,6 +36,7 @@ SOURCES += \
         DamageSimulation.cpp \
         Enemy.cpp \
         GlobalAbilityList.cpp \
+        InstantTooltipLabel.cpp \
         Item.cpp \
         PlayerCharacter.cpp \
         PlayerClass.cpp \
@@ -50,6 +52,7 @@ SOURCES += \
 HEADERS += \
         Ability.h \
         AbilityDamageType.h \
+        AbilityTooltip.h \
         ActionsDialog.h \
         AppliedBuff.h \
         Buff.h \
@@ -59,6 +62,7 @@ HEADERS += \
         DamageSimulation.h \
         Enemy.h \
         GlobalAbilityList.h \
+        InstantTooltipLabel.h \
         Item.h \
         ItemSlot.h \
         MainWindow.h \
@@ -72,6 +76,7 @@ HEADERS += \
         Weapon.h
 
 FORMS += \
+        AbilityTooltip.ui \
         ActionsDialog.ui \
         CharacterSheet.ui \
         MainWindow.ui \

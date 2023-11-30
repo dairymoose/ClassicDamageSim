@@ -18,7 +18,7 @@ void MainWindow::simSetup()
         PC->setName("Octorion");
         PC->setLevel(40);
         PC->setPlayerRace("Human");
-        PC->setPlayerClass(PlayerClass::getClassByName("Warrior"));
+        PC->setPlayerClass(PlayerClass::getClassByName("WARRIOR"));
         
         PC->setStrength(139);
         PC->setAgility(54);
@@ -186,6 +186,7 @@ void MainWindow::on_actionsButton_clicked()
 {
     this->simSetup();
     
+    actionsDialog->setPC(this->PC);
     actionsDialog->clearAllPriorityActions();
     actionsDialog->addPriorityActionList(this->PAL);
     actionsDialog->addClassPriorityActionList(this->availableActionsForClass);
