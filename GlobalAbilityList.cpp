@@ -87,16 +87,7 @@ GlobalAbilityList::GlobalAbilityList()
     this->Rend->setGrantedDebuff(RendDebuff);
     this->Rend->setTooltipText("Wounds the target causing them to bleed for <dmg> damage over <time> sec.");
     this->Rend->setOnGetTooltip([](std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability){
-        std::stringstream ssDmg;
-        std::stringstream ssDuration;
-        float duration = ability->getGrantedDebuff()->getOnCalculateDuration()(PC, ability->getRank());
-        ssDuration<<duration;
-        ssDmg<<DamageSimulation::totalDotDamageFromOneTick(
-                   ability->getGrantedDebuff()->getOnDotTickDamage()(PC, PC, ability->getRank(), 1, duration), 
-                   ability->getGrantedDebuff()->getOnCalculateDotTickPeriod()(PC), 
-                   duration);
-        std::string r = std::regex_replace(tooltipText, std::regex("<dmg>"), ssDmg.str());
-        return std::regex_replace(r, std::regex("<time>"), ssDuration.str());
+        return DamageSimulation::regexReplaceTooltipDotDuration(DamageSimulation::regexReplaceTooltipDotDamage(tooltipText, ability, PC), ability, PC);
     });
     
     this->BattleShout = new Ability("Battle Shout");
@@ -136,13 +127,7 @@ GlobalAbilityList::GlobalAbilityList()
     this->Whirlwind->setAoeMaxTargets(4);
     this->Whirlwind->setTooltipText("In a whirlwind of steel you attack up to 4 enemies within 8 yards, causing weapon damage to each enemy. (<dmg> damage)");
     this->Whirlwind->setOnGetTooltip([](std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability){
-        std::stringstream ssDmg;
-        bool avg = PC->getAlwaysUseAverageDamage();
-        PC->setAlwaysUseAverageDamage(true);
-        ssDmg<<ability->getDamage(PC);
-        PC->setAlwaysUseAverageDamage(avg);
-        std::string r = std::regex_replace(tooltipText, std::regex("<dmg>"), ssDmg.str());
-        return r;
+        return DamageSimulation::regexReplaceTooltipDirectDamage(tooltipText, ability, PC);
     });
     
     this->MortalStrike = new Ability("Mortal Strike");
@@ -157,13 +142,7 @@ GlobalAbilityList::GlobalAbilityList()
     this->MortalStrike->setResourceCost(30);
     this->MortalStrike->setTooltipText("A vicious strike that deals <dmg> damage and wounds the target, reducing the effectiveness of any healing by 50% for 10 sec.");
     this->MortalStrike->setOnGetTooltip([](std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability){
-        std::stringstream ssDmg;
-        bool avg = PC->getAlwaysUseAverageDamage();
-        PC->setAlwaysUseAverageDamage(true);
-        ssDmg<<ability->getDamage(PC);
-        PC->setAlwaysUseAverageDamage(avg);
-        std::string r = std::regex_replace(tooltipText, std::regex("<dmg>"), ssDmg.str());
-        return r;
+        return DamageSimulation::regexReplaceTooltipDirectDamage(tooltipText, ability, PC);
     });
     
     this->Slam = new Ability("Slam");

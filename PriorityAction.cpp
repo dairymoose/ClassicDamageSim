@@ -1,5 +1,7 @@
 #include "PriorityAction.h"
 #include "PlayerCharacter.h"
+#include "DamageSimulation.h"
+#include "Ability.h"
 
 Ability *PriorityAction::getAbility() const
 {
@@ -25,8 +27,7 @@ void PriorityAction::execute(PlayerCharacter *PC, std::vector<Enemy *> &enemyLis
 {
     if (this->getAbility() != nullptr) {
         this->getAbility()->triggerResourceCost(PC, timestamp);
-        float damage = this->getAbility()->getDamage(PC);
-        damage *= PC->calculateGlobalDamageBonus();
+        int32_t damage = DamageSimulation::getDamageForAbility(this->getAbility(), PC);
         bool isCritical;
         damage = PC->maybeApplyCritDamage(this->getAbility(), damage, isCritical);
         
