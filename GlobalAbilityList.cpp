@@ -5,6 +5,8 @@
 #include "DamageSimulation.h"
 #include <regex>
 
+GlobalAbilityList* GlobalAbilityList::activeList = nullptr;
+
 void GlobalAbilityList::resetFields()
 {
     this->didPrintStats = false;
@@ -22,7 +24,7 @@ GlobalAbilityList::GlobalAbilityList()
  
     this->PrintPlayerStats = new Ability("Print Stats");
     this->PrintPlayerStats->setCooldownFunction([](PlayerCharacter *PC, int32_t rank){return 5.0f;});
-    this->PrintPlayerStats->setOnCooldownTriggeredFunction([&](float timestamp, PlayerCharacter *PC, int32_t rank) { if(!didPrintStats){didPrintStats=true;float specDamageBonus = PC->calculateGlobalDamageBonus();COMBAT_LOG(timestamp, PC, PC->getName()<<": Level "<<PC->getLevel()<<" "<<PC->getPlayerRace()<<" "<<PC->getPlayerClass().getClassName()<< ", "<<"AP="<<PC->calculateMeleeAttackPower()<<", "<<"WepMin="<<(int32_t)(specDamageBonus*PC->calculatedWeaponMinDamage())<<", "<<"WepMax="<<(int32_t)(specDamageBonus*PC->calculatedWeaponMaxDamage()));} });
+    this->PrintPlayerStats->setOnCooldownTriggeredFunction([&](float timestamp, PlayerCharacter *PC, int32_t rank) { if(!didPrintStats){didPrintStats=true;float specDamageBonus = PC->calculateGlobalDamageBonus();COMBAT_LOG(timestamp, PC, PC->getName()<<": Level "<<PC->getLevel()<<" "<<PC->getPlayerRace()<<" "<<PC->getPlayerClass().getClassName()<< ", "<<"AP="<<PC->calculateMeleeAttackPower()<<", "<<"WepMin="<<(int32_t)(specDamageBonus*PC->calculatedWeaponMinDamage())<<", "<<"WepMax="<<(int32_t)(specDamageBonus*PC->calculatedWeaponMaxDamage())<<", Speed="<<PC->calculatedMainhandWeaponSpeed()<<" speed");} });
     this->PrintPlayerStats->setIsGcdAbility(false);
     
     this->MeleeMainhandAutoAttack = new Ability("Main-hand attack");
@@ -49,7 +51,7 @@ GlobalAbilityList::GlobalAbilityList()
     
     this->MeleeOffhandAutoAttack = new Ability("Off-hand attack");
     this->MeleeOffhandAutoAttack->setAbilityDamageType(AbilityDamageType::Physical);
-    this->MeleeOffhandAutoAttack->setCanUseFunction([](PlayerCharacter *PC, int32_t rank){return PC->getOffHandItem() != nullptr;});
+    this->MeleeOffhandAutoAttack->setCanUseFunction([](PlayerCharacter *PC, int32_t rank, float timestamp){return PC->getOffHandItem() != nullptr;});
     this->MeleeOffhandAutoAttack->setDamageFunction([](PlayerCharacter *PC, int32_t rank){return PC->calculateSimulatedOffhandSwing();});
     this->MeleeOffhandAutoAttack->setCooldownFunction([](PlayerCharacter *PC, int32_t rank){return PC->calculatedOffhandWeaponSpeed();});
     this->MeleeOffhandAutoAttack->setIsGcdAbility(false);
@@ -80,6 +82,10 @@ GlobalAbilityList::GlobalAbilityList()
             if (impRend > 0) {
                 talentDmgBoost = 1.0f + impRend*0.10f + 0.05f;
             }
+            
+            if (PC->hasRune("Blood Frenzy")) {
+                PC->setResource(PC->getResource() + 3);
+            }
         }
         return DamageSimulation::dotTickDamageFromTotalDamage(dmg * talentDmgBoost, 3.0f, buffDuration);});
     this->Rend->setIgnoresArmor(true);
@@ -94,15 +100,21 @@ GlobalAbilityList::GlobalAbilityList()
     this->BattleShout->setAbilityDamageType(AbilityDamageType::Physical);
     Buff *BattleShoutBuff = new Buff("Battle Shout", this->BattleShout);
     BattleShoutBuff->setOnCalculateDuration([&](Combatant *Cbt, int32_t rank){return 120;});
-    BattleShoutBuff->setOnCalculateAttackPower([](int32_t rank, int32_t AP){int32_t b=0;
-                                                                            if (rank == 1) b = 15;
-                                                                            if (rank == 2) b = 40;
-                                                                            if (rank == 3) b = 60;
-                                                                            if (rank == 4) b = 94;
-                                                                            if (rank == 5) b = 139;
-                                                                            if (rank == 6) b = 193;
-                                                                            if (rank == 7) b = 232;
-                                                                            return AP + b;});
+    BattleShoutBuff->setOnCalculateAttackPower([](Combatant *Cbt, int32_t rank, int32_t AP){
+        if (PlayerCharacter *PC = dynamic_cast<PlayerCharacter *>(Cbt)) {
+            float talentBoost = 1.0f + PC->getTalentRank("Improved Battle Shout")*0.05f;
+            int32_t b=0;
+            if (rank == 1) b = 15;
+            if (rank == 2) b = 40;
+            if (rank == 3) b = 60;
+            if (rank == 4) b = 94;
+            if (rank == 5) b = 139;
+            if (rank == 6) b = 193;
+            if (rank == 7) b = 232;
+            return (int32_t)(AP + b*talentBoost);
+        }
+        return AP;
+    });
     this->BattleShout->setResourceCost(10);
     this->BattleShout->setGrantedBuff(BattleShoutBuff);
     this->BattleShout->getLearnLevels().push_back(1);
@@ -115,7 +127,7 @@ GlobalAbilityList::GlobalAbilityList()
     this->BattleShout->setTooltipText("The warrior shouts, increasing the melee attack power of all party members within 20 yards by <AP>.  Lasts 2 min.");
     this->BattleShout->setOnGetTooltip([](std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability){
         std::stringstream ss;
-        ss<<ability->getGrantedBuff()->getOnCalculateAttackPower()(ability->getRank(), 0);
+        ss<<ability->getGrantedBuff()->getOnCalculateAttackPower()(PC, ability->getRank(), 0);
         return std::regex_replace(tooltipText, std::regex("<AP>"), ss.str());
     });
     
@@ -166,12 +178,12 @@ GlobalAbilityList::GlobalAbilityList()
                                                                            if (rank == 5){d=600;r=15;}
                                                                            return d + PC->getResource()*r;});
     this->Execute->setResourceGenerationFunction([](PlayerCharacter *PC, int32_t rank, int32_t damageDone, bool isCritical){ return -100; });
-    this->Execute->setCanUseFunction([](PlayerCharacter *PC, int32_t rank){float tHp = PC->getTarget()->getCurrentHp(); float tMaxHp = PC->getTarget()->getMaxHp(); float hpPct = tHp/tMaxHp; if (hpPct <= 0.20f) return true; return false;});
+    this->Execute->setCanUseFunction([](PlayerCharacter *PC, int32_t rank, float timestamp){float tHp = PC->getTarget()->getCurrentHp(); float tMaxHp = PC->getTarget()->getMaxHp(); float hpPct = tHp/tMaxHp; if (hpPct <= 0.20f) return true; return false;});
     this->Execute->setResourceCost(15);
     
     this->Charge = new Ability("Charge");
     this->Charge->setResourceGenerationFunction([](PlayerCharacter *PC, int32_t rank, int32_t damageDone, bool isCritical){ int32_t impCharge = PC->getTalentRank("Improved Charge"); return 9 + (3*(rank-1)) + impCharge*3; });
-    this->Charge->setCanUseFunction([&](PlayerCharacter *PC, int32_t rank){ if (!didCharge && PC->getDamageDone() == 0) {didCharge = true; return true;} return false; });
+    this->Charge->setCanUseFunction([&](PlayerCharacter *PC, int32_t rank, float timestamp){ if (!didCharge && PC->getDamageDone() == 0) {didCharge = true; return true;} return false; });
     this->Charge->setCooldownFunction([](PlayerCharacter *PC, int32_t rank){ return 15; });
     this->Charge->setCastTime(0.01f);
     this->Charge->setIsGcdAbility(false);
@@ -207,4 +219,131 @@ GlobalAbilityList::GlobalAbilityList()
                                                                         return PC->calculateSimulatedMainhandSwing() + d;});
     this->HeroicStrike->setReplacesNextMelee(true);
     this->HeroicStrike->setResourceCost(15);
+    this->HeroicStrike->setOnGetResourceCostModifier([](PlayerCharacter *PC, int32_t rank, int32_t resourceCost){int32_t impHS=PC->getTalentRank("Improved Heroic Strike");return resourceCost-impHS;});
+    
+    this->QuickStrike = new Ability("Quick Strike");
+    this->QuickStrike->setAbilityDamageType(AbilityDamageType::Physical);
+    this->QuickStrike->setDamageFunction([](PlayerCharacter *PC, int32_t rank){
+        float rangeMin = 0.15f;
+        float rangeMax = 0.25f;
+        float rangeAvg = (rangeMin + rangeMax)/2.0f;
+        float r;
+        if (PC->getAlwaysUseAverageDamage()) {
+            r = rangeAvg;
+        } else {
+            r = DamageSimulation::randomFloatBetween(rangeMin, rangeMax);
+        }
+        return r*PC->calculateMeleeAttackPower();
+    });
+    this->QuickStrike->setResourceCost(20);
+    this->QuickStrike->setTooltipText("A reckless instant melee attack with your two-handed weapon dealing (Attack power * 15 / 100) to (Attack power * 25 / 100) physical damage. This ability benefits from and triggers all effects associated with Heroic Strike. (<dmg> damage)");
+    this->QuickStrike->setOnGetTooltip([](std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability){
+        return DamageSimulation::regexReplaceTooltipDirectDamage(tooltipText, ability, PC);
+    });
+    this->QuickStrike->setOnGetResourceCostModifier([](PlayerCharacter *PC, int32_t rank, int32_t resourceCost){int32_t impHS=PC->getTalentRank("Improved Heroic Strike");return resourceCost-impHS;});
+    
+    this->RagingBlow = new Ability("Raging Blow");
+    this->RagingBlow->setAbilityDamageType(AbilityDamageType::Physical);
+    this->RagingBlow->setDamageFunction([](PlayerCharacter *PC, int32_t rank){
+        return PC->calculateSimulatedMainhandSwing();});
+    this->RagingBlow->setCanUseFunction([](PlayerCharacter *PC, int32_t rank, float timestamp){
+        if (
+                PC->hasBuff(GlobalAbilityList::activeList->Bloodrage->getGrantedBuff()) ||
+                PC->hasBuff(GlobalAbilityList::activeList->Enrage)) 
+            return true;
+        return false;
+    });
+    this->RagingBlow->setCooldownFunction([](PlayerCharacter *PC, int32_t abilityRank){return 8;});
+    this->RagingBlow->setTooltipText("A ferocious strike that deals 100% weapon damage, but can only be used while Enrage, Berserker Rage, or Bloodrage is active. (<dmg> damage)");
+    this->RagingBlow->setOnGetTooltip([](std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability){
+        return DamageSimulation::regexReplaceTooltipDirectDamage(tooltipText, ability, PC);
+    });
+    
+    this->Enrage = new Buff("Enrage", nullptr);
+    this->Enrage->setOnCalculateDuration([](Combatant *Cbt, int32_t rank){return 12.0f;});
+    this->Enrage->setOnGetMeleeAutoAttackMultiplier([](Combatant *Cbt){return 1.20f;});
+    
+    this->WildStrikes = new Buff("Wild Strikes", nullptr);
+    this->WildStrikes->setOnCalculateDuration([](Combatant *Cbt, int32_t rank){return 99999.0f;});
+    this->WildStrikes->setOnAbilityDamageMelee([&](Combatant *Cbt, float timestamp){
+        if (PlayerCharacter *PC = dynamic_cast<PlayerCharacter *>(Cbt)){
+            int32_t AP=PC->calculateMeleeAttackPower();
+            if (PC->getBakeWildStrikesIntoAverageDamage()) {
+                int32_t wildStrikeAp = (int32_t)(AP * 1.20f);
+                PC->setAttackPowerOverride(wildStrikeAp);
+                PriorityAction *PA = PC->getPriorityActionList()->getMainHandAutoAttackAction();
+                if (PA != nullptr) {
+                    std::vector<Enemy *> enemyList;
+                    enemyList.push_back(PC->getTarget());
+                    inExtraAttack = true;
+                    PC->setGlobalDamageModifier(0.20f);
+                    PA->execute(PC, enemyList, timestamp, false);
+                    PC->setGlobalDamageModifier(1.0f);
+                    inExtraAttack = false;
+                }
+                PC->setAttackPowerOverride(-1);
+            } else {
+                float roll = DamageSimulation::randomFloatBetween(0.0f, 1.0f);
+                float wildStrikeChance = 0.20f;
+                if (roll < wildStrikeChance) {
+                    COMBAT_LOG(timestamp, PC, "*** WILD STRIKE! ***");
+                    int32_t wildStrikeAp = (int32_t)(AP * 1.20f);
+                    PC->setAttackPowerOverride(wildStrikeAp);
+                    PriorityAction *PA = PC->getPriorityActionList()->getMainHandAutoAttackAction();
+                    if (PA != nullptr) {
+                        std::vector<Enemy *> enemyList;
+                        enemyList.push_back(PC->getTarget());
+                        inExtraAttack = true;
+                        PA->execute(PC, enemyList, timestamp, false);
+                        inExtraAttack = false;
+                    }
+                    //int32_t wildStrikeSwing = PC->calculateSimulatedMainhandSwing();
+                    PC->setAttackPowerOverride(-1);
+                }
+            }
+        }});
+    
+    this->FreeWildStrikes = new Ability("Free: Wild Strikes");
+    this->FreeWildStrikes->setAbilityDamageType(AbilityDamageType::Physical);
+    this->FreeWildStrikes->setResourceCost(0);
+    this->FreeWildStrikes->setIsGcdAbility(false);
+    this->FreeWildStrikes->setGrantedBuff(this->WildStrikes);
+    this->FreeWildStrikes->setTooltipText("Free wild strikes buff");
+    this->FreeWildStrikes->setOnGetTooltip([](std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability){
+        return tooltipText;
+    });
+    
+    this->DeepWounds = new Buff("Deep Wounds", nullptr);
+    this->DeepWounds->setOnCalculateDuration([&](Combatant *Cbt, int32_t rank){return 12;});
+    this->DeepWounds->setOnDotTickDamage([](Combatant *Caster, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration){
+        if (PlayerCharacter *PC = dynamic_cast<PlayerCharacter *>(Caster)) {
+            float dmgPct = 0.20f * PC->getTalentRank("Deep Wounds");
+            int32_t totalDamage = PC->calculateSimulatedMainhandSwing() * dmgPct;
+            if (PC->hasRune("Blood Frenzy")) {
+                PC->setResource(PC->getResource() + 3);
+            }
+            return DamageSimulation::dotTickDamageFromTotalDamage(totalDamage, 3.0f, buffDuration);
+        }
+    });
+    this->DeepWounds->setIgnoresArmor(true);
+    
+    this->Overpower = new Ability("Overpower");
+    this->Overpower->setAbilityDamageType(AbilityDamageType::Physical);
+    this->Overpower->setDamageFunction([](PlayerCharacter *PC, int32_t rank){int32_t d=0;
+                                                                                if (rank == 1){d=5;}
+                                                                                if (rank == 2){d=15;}
+                                                                                if (rank == 3){d=25;}
+                                                                                if (rank == 4){d=35;}
+                                                                                return PC->calculateSimulatedMainhandSwing() + d;});
+    this->Overpower->setCooldownFunction([](PlayerCharacter *PC, int32_t rank){return 5;});
+    this->Overpower->setResourceCost(5);
+    this->Overpower->setCanUseFunction([](PlayerCharacter *PC, int32_t rank, float timestamp){if (PC->getTarget() != nullptr && PC->getTarget()->getLastDodgeTimestamp() != -1.0f && (timestamp - PC->getTarget()->getLastDodgeTimestamp()) < 5.0f) return true; return false;});
+    this->Overpower->setOnCooldownTriggeredFunction([](float timestamp, PlayerCharacter *PC, int32_t rank){if (PC->getTarget() != nullptr) PC->getTarget()->setLastDodgeTimestamp(-1.0f);});
+    this->Overpower->setTooltipText("Instantly overpower the enemy, causing weapon damage plus 5.  Only useable after the target dodges.  The Overpower cannot be blocked, dodged or parried. (<dmg> damage)");
+    this->Overpower->setOnGetTooltip([](std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability){
+        return DamageSimulation::regexReplaceTooltipDirectDamage(tooltipText, ability, PC);
+    });
+    this->Overpower->setCannotBeBlockedOrDodgedOrParried(true);
+    
+    activeList = this;
 }

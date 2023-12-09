@@ -19,5 +19,8 @@
         <file>talents.png</file>
         <file>heroic_strike.jpg</file>
         <file>tooltip_frame.png</file>
+        <file>quick_strike.jpg</file>
+        <file>raging_blow.jpg</file>
+        <file>overpower.jpg</file>
     </qresource>
 </RCC>

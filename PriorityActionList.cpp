@@ -25,6 +25,10 @@ PriorityAction *PriorityActionList::getNextAction(PlayerCharacter *PC, float tim
             shouldCheckAbility = this->priorityActions[i]->getPredicate()(PC, timestamp);
             if (!shouldCheckAbility) {
                 failureReason = FailureReason::Predicate;
+                if (this->priorityActions[i]->getSkipToNextActionIfUseConditionFails() == false) {
+                    //skip lower priority skills if this flag is set to false
+                    break;
+                }
             }
         }
         if (this->priorityActions[i]->getDisabled()) {
@@ -46,7 +50,7 @@ PriorityAction *PriorityActionList::getNextAction(PlayerCharacter *PC, float tim
                             cdCondition && resourceCondition;
                     if (meetsCdAndResourceCondition) {
                         if (this->priorityActions[i]->getAbility()->getCanUseFunction() == nullptr || 
-                                this->priorityActions[i]->getAbility()->getCanUseFunction()(PC, this->priorityActions[i]->getAbility()->getRank())) {
+                                this->priorityActions[i]->getAbility()->getCanUseFunction()(PC, this->priorityActions[i]->getAbility()->getRank(), timestamp)) {
                             failureReason = FailureReason::Success;
                             return this->priorityActions[i];
                         } else {
@@ -116,6 +120,18 @@ bool PriorityActionList::removeExistingAction(PriorityAction *action)
         }
     }
     return false;
+}
+
+PriorityAction *PriorityActionList::getMainHandAutoAttackAction()
+{
+    PriorityAction *mhAttack = this->getActionFromAbilityName("Main-hand attack");
+    return mhAttack;
+}
+
+PriorityAction *PriorityActionList::getOffHandAutoAttackAction()
+{
+    PriorityAction *ohAttack = this->getActionFromAbilityName("Off-hand attack");
+    return ohAttack;
 }
 
 void PriorityActionList::resetAllAbilities()

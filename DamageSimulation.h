@@ -21,16 +21,26 @@ class DamageSimulation
     GlobalAbilityList *globalAbilityList = nullptr;
     float timeStep = 0.10f;
     float time = 0.0f;
-    float maxCombatTime = 120.0f;
+    float maxCombatTime = 10*60.0f;
     int32_t maxActionsPerTimeStep = 20;
+    
+    int32_t iterationCount = 0;
+    float iterationsTotalTimeLength = 0.0f;
+    float iterationsMinDps = -1.0f;
+    float iterationsMaxDps = -1.0f;
+    float iterationsDpsSummation = 0.0f;
+    std::unordered_map<Ability *, int32_t> iterationsDamageDoneByAbility;
+    std::unordered_map<Buff *, int32_t> iterationsDamageDoneByBuff;
 public:
     DamageSimulation();
     PlayerCharacter *getPC() const;
     void setPC(PlayerCharacter *value);
     
+    void resetIterationsData();
     void reset();
     
     void simulate(PriorityActionList *priorityActions);
+    void printIterationSummary(std::ostream& stream);
     float getTimeStep() const;
     void setTimeStep(float value);
     bool noEnemiesExist();
@@ -44,8 +54,20 @@ public:
     static int32_t dotTickDamageFromTotalDamage(int32_t totalDamage, float tickPeriod, float totalDuration) {
         return DamageSimulation::Round(tickPeriod*totalDamage/totalDuration);
     }
-    static int32_t totalDotDamageFromOneTick(int32_t oneTickDamage, float tickPeriod, float totalDuration) {
-        return DamageSimulation::Round(totalDuration*oneTickDamage/tickPeriod);
+    static int32_t totalDotDamageForAbility(Ability *ability, PlayerCharacter *PC) {
+        if (ability == nullptr) {
+            return 0;
+        }
+        if (ability->getGrantedDebuff() == nullptr || ability->getGrantedDebuff()->getOnDotTickDamage() == nullptr) {
+            return 0;
+        }
+        float totalDuration = DamageSimulation::getDotDuration(ability, PC);
+        if (totalDuration > 0.0f) {
+            float oneTickDamage = ability->getGrantedDebuff()->getOnDotTickDamage()(PC, PC, ability->getRank(), 1, totalDuration); 
+            float tickPeriod = ability->getGrantedDebuff()->getOnCalculateDotTickPeriod()(PC);
+            return DamageSimulation::Round(totalDuration*oneTickDamage/tickPeriod);
+        }
+        return 0;
     }
     static int32_t getDamageForAbility(Ability *ability, PlayerCharacter *PC) {
         float damage = ability->getDamage(PC);
@@ -63,10 +85,7 @@ public:
     static std::string regexReplaceTooltipDotDamage(std::string tooltipText, Ability *ability, PlayerCharacter *PC) {
         std::stringstream ssDmg;
         float duration = DamageSimulation::getDotDuration(ability, PC);
-        ssDmg<<DamageSimulation::totalDotDamageFromOneTick(
-                   ability->getGrantedDebuff()->getOnDotTickDamage()(PC, PC, ability->getRank(), 1, duration), 
-                   ability->getGrantedDebuff()->getOnCalculateDotTickPeriod()(PC), 
-                   duration);
+        ssDmg<<DamageSimulation::totalDotDamageForAbility(ability, PC);
         return std::regex_replace(tooltipText, std::regex("<dmg>"), ssDmg.str());
     }
     static std::string regexReplaceTooltipDotDuration(std::string tooltipText, Ability *ability, PlayerCharacter *PC) {
@@ -76,6 +95,9 @@ public:
         return std::regex_replace(tooltipText, std::regex("<time>"), ssDuration.str());
     }
     static int32_t getDotDuration(Ability *ability, PlayerCharacter *PC) {
+        if (ability->getGrantedDebuff()->getOnCalculateDuration() == nullptr) {
+            return 0;
+        }
         float duration = ability->getGrantedDebuff()->getOnCalculateDuration()(PC, ability->getRank());
         return duration;
     }
@@ -83,6 +105,9 @@ public:
     GlobalAbilityList *getGlobalAbilityList() const;
     void setGlobalAbilityList(GlobalAbilityList *value);
     static std::mt19937& getRandEngine();
+    static float randomFloatBetween(float a, float b);
+    static int32_t randomIntBetween(int32_t a, int32_t b);
+    float getTime() const;
 };
 
 #endif // DAMAGESIMULATION_H

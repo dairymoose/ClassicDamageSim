@@ -172,8 +172,26 @@ void CharacterSheet::processItem(std::string text, int32_t slotNo)
         this->PC->setMainHandItem(wep);
     }
         break;
-    case 17:
-        this->PC->setOffHandItem(new Item());
+    case 17:{
+        Weapon *wep = new Weapon();
+        ss = std::stringstream(values["min"]);
+        ss >> numeric;
+        wep->setMinDamage(numeric);
+        ss = std::stringstream(values["max"]);
+        ss >> numeric;
+        wep->setMaxDamage(numeric);
+        ss = std::stringstream(values["speed"]);
+        ss >> real;
+        wep->setWeaponSpeed(real);
+        std::string type = values["type"];
+        if (type == "TwoHand")
+            wep->setSlot(ItemSlot::TwoHand);
+        else if (type == "MainHand")
+            wep->setSlot(ItemSlot::MainHand);
+        else if (type == "OffHand")
+            wep->setSlot(ItemSlot::OffHand);
+        this->PC->setOffHandItem(wep);
+    }
         break;
     }
 }

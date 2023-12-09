@@ -2,6 +2,7 @@
 #define BUFF_H
 
 #include <functional>
+#include "AbilityDamageType.h"
 class PlayerCharacter;
 class Ability;
 class Combatant;
@@ -10,15 +11,20 @@ class Buff
 {
     std::string name;
     Ability *parent = nullptr;
-    std::function<int32_t(int32_t rank, int32_t attackPowerIn)> onCalculateAttackPower = nullptr;
+    std::function<int32_t(Combatant *Cbt, int32_t rank, int32_t attackPowerIn)> onCalculateAttackPower = nullptr;
     std::function<int32_t (Combatant *Caster, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration)> onDotTickDamage = nullptr;
     std::function<void (Combatant *Caster, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration)> onBuffTick = nullptr;
     std::function<int32_t (Combatant *Cbt)> onCalculateDotTickPeriod = [](Combatant *Cbt){return 3;};
     std::function<float (Combatant *Cbt, int32_t rank)> onCalculateDuration = nullptr;
+    std::function<float (Combatant *Cbt)> onGetMeleeAutoAttackMultiplier = nullptr;
+    std::function<void (Combatant *Cbt)> onAutoAttack = nullptr;
+    std::function<void (Combatant *Cbt, float timestamp)> onAbilityDamageMelee = nullptr;
+    AbilityDamageType abilityDamageType = AbilityDamageType::Other;
+    bool ignoresArmor = false;
 public:
     Buff(std::string name, Ability *parent);
-    std::function<int32_t (int32_t rank, int32_t attackPowerIn)> getOnCalculateAttackPower() const;
-    void setOnCalculateAttackPower(const std::function<int32_t (int32_t rank, int32_t attackPowerIn)> &value);
+    std::function<int32_t (Combatant *Cbt, int32_t rank, int32_t attackPowerIn)> getOnCalculateAttackPower() const;
+    void setOnCalculateAttackPower(const std::function<int32_t (Combatant *Cbt, int32_t, int32_t)> &value);
     std::function<int32_t (Combatant *Caster, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration)> getOnDotTickDamage() const;
     void setOnDotTickDamage(const std::function<int32_t (Combatant *Caster, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration)> &value);
     std::function<int32_t (Combatant *Cbt)> getOnCalculateDotTickPeriod() const;
@@ -31,6 +37,16 @@ public:
     void setParent(Ability *value);
     std::function<void (Combatant *Caster, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration)> getOnBuffTick() const;
     void setOnBuffTick(const std::function<void (Combatant *Caster, Combatant *Target, int32_t rank, int32_t tickNumber, float buffDuration)> &value);
+    std::function<float (Combatant *Cbt)> getOnGetMeleeAutoAttackMultiplier() const;
+    void setOnGetMeleeAutoAttackMultiplier(const std::function<float (Combatant *Cbt)> &value);
+    std::function<void (Combatant *Cbt)> getOnAutoAttack() const;
+    void setOnAutoAttack(const std::function<void (Combatant *Cbt)> &value);
+    std::function<void (Combatant *Cbt, float timestamp)> getOnAbilityDamageMelee() const;
+    void setOnAbilityDamageMelee(const std::function<void (Combatant *Cbt, float timestamp)> &value);
+    AbilityDamageType getAbilityDamageType() const;
+    void setAbilityDamageType(const AbilityDamageType &value);
+    bool getIgnoresArmor() const;
+    void setIgnoresArmor(bool value);
 };
 
 #endif // BUFF_H

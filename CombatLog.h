@@ -62,6 +62,7 @@
 class CombatLog
 {
     std::vector<std::string> logText;
+    bool enabled = true;
 public:
     CombatLog();
     std::vector<std::string>& getLogText() {
@@ -70,6 +71,8 @@ public:
     void clear() {
         this->logText.clear();
     }
+    bool getEnabled() const;
+    void setEnabled(bool value);
 };
 
 #endif // COMBATLOG_H

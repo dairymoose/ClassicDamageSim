@@ -20,6 +20,9 @@ public:
     void transferPriorityActionFromExistingDialog(ActionsDialog *removeFrom, PriorityAction *action);
     void removePriorityAction(PriorityAction *toRemove);
     void addPriorityAction(PriorityAction *action);
+    void addPriorityActionByInternalName(std::string internalName);
+    bool hasPriorityAction(PriorityAction *action);
+    bool hasPriorityActionByInternalName(std::string name);
     void addPriorityActionList(PriorityActionList *PAL);
     void handleConditionsButtonClicked();
     void addClassPriorityActionList(PriorityActionList *PAL);
@@ -46,16 +49,24 @@ public:
     PlayerCharacter *getPC() const;
     void setPC(PlayerCharacter *value);
     
+    std::vector<Enemy *> *getEnemyListPtr() const;
+    void setEnemyListPtr(std::vector<Enemy *> *value);
+    
 private slots:
     void on_ActionsDialog_rejected();
     
     void on_addButton_clicked();
+    
+    void on_saveButton_clicked();
+    
+    void on_loadButton_clicked();
     
 private:
     Ui::ActionsDialog *ui;
 
     std::vector<SingularPriorityAction *> priorityActionWidgets;
     
+    std::vector<Enemy *> *enemyListPtr = nullptr;
     void swapActionsByIndex(int32_t indexFrom, int32_t indexTo);
     void addPriorityActionUi(PriorityAction *action, std::string nameOverride, std::string name, std::string condition);
     ActionsDialog *baseActionsDialog = nullptr;

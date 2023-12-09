@@ -1,0 +1,3 @@
+free_battle_shout
+mainhand_auto
+offhand_auto

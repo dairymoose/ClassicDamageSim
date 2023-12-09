@@ -1,0 +1,12 @@
+free_battle_shout
+mainhand_auto
+offhand_auto
+
+charge
+execute
+qs_follow_up
+bloodrage
+wait_for_rage
+rend
+overpower
+quick_strike

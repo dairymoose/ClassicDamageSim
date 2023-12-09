@@ -5,6 +5,8 @@
 #include <functional>
 #include <vector>
 #include "AbilityDamageType.h"
+#include "Enemy.h"
+#include "MeleeHitResult.h"
 
 class Buff;
 class PlayerCharacter;
@@ -18,9 +20,10 @@ class Ability
     std::function<void (float timestamp, PlayerCharacter *PC, int32_t abilityRank)> onCooldownTriggeredFunction = nullptr;
     std::function<int32_t (PlayerCharacter *PC, int32_t abilityRank)> damageFunction = nullptr;
     std::function<float (PlayerCharacter *PC, int32_t abilityRank)> cooldownFunction = nullptr;
-    std::function<float (PlayerCharacter *PC, int32_t abilityRank)> canUseFunction = nullptr;
+    std::function<float (PlayerCharacter *PC, int32_t abilityRank, float timestamp)> canUseFunction = nullptr;
     std::function<int32_t (PlayerCharacter *PC, int32_t abilityRank, int32_t damageDone, bool isCritical)> resourceGenerationFunction = nullptr;
     std::function<std::string (std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability)> onGetTooltip = nullptr;
+    std::function<int32_t (PlayerCharacter *PC, int32_t abilityRank, int32_t initialCost)> onGetResourceCostModifier = nullptr;
     bool isGcdAbility = true;
     Buff *GrantedBuff = nullptr;
     Buff *GrantedDebuff = nullptr;
@@ -36,9 +39,16 @@ class Ability
     float castTime = 0.0f;
     bool castedAbilityResetsAutoAttack = true;
     std::vector<int32_t> learnLevels;
+    bool cannotBeBlockedOrDodgedOrParried = false;
+    int32_t convertToPercentFormat(float f);
 public:
     Ability(std::string name);
     
+    void printMeleeAttackTable(MeleeAttackTable &mat, std::ostream& stream);
+    void generateMeleeAttackTable(PlayerCharacter *PC, Enemy *target, MeleeAttackTable &mat);
+    MeleeHitResult rollAttackTableForHitResult(MeleeAttackTable &mat);
+    void execute(PlayerCharacter *PC, std::vector<Enemy *> &enemyList, float timestamp, bool ignoreGcd=false, bool ignoreResourceCost=false, bool shouldTriggerCooldown=true);
+    void triggerAbilityDamageMeleeHooks(PlayerCharacter *PC, float timestamp);
     void reset();
     float getRemainingCooldown(float timestamp);
     float getTimeSinceLastUsed(float timestamp);
@@ -66,8 +76,8 @@ public:
     void setAbilityDamageType(const AbilityDamageType &value);
     std::string getName() const;
     void setName(const std::string &value);
-    std::function<float (PlayerCharacter *PC, int32_t abilityRank)> getCanUseFunction() const;
-    void setCanUseFunction(const std::function<float (PlayerCharacter *PC, int32_t abilityRank)> &value);
+    std::function<bool (PlayerCharacter *PC, int32_t abilityRank, float timestamp)> getCanUseFunction() const;
+    void setCanUseFunction(const std::function<bool (PlayerCharacter *PC, int32_t rank, float timestamp)> &value);
     int32_t getRank() const;
     void setRank(const int32_t &value);
     std::function<void (float timestamp, PlayerCharacter *PC, int32_t abilityRank)> getOnCooldownTriggeredFunction() const;
@@ -89,6 +99,10 @@ public:
     void setTooltipText(const std::string &value);
     std::function<std::string (std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability)> getOnGetTooltip() const;
     void setOnGetTooltip(const std::function<std::string (std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability)> &value);
+    std::function<int32_t (PlayerCharacter *PC, int32_t abilityRank, int32_t initialCost)> getOnGetResourceCostModifier() const;
+    void setOnGetResourceCostModifier(const std::function<int32_t (PlayerCharacter *PC, int32_t abilityRank, int32_t initialCost)> &value);
+    bool getCannotBeBlockedOrDodgedOrParried() const;
+    void setCannotBeBlockedOrDodgedOrParried(bool value);
 };
 
 #endif // ABILITY_H

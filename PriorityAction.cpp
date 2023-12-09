@@ -2,6 +2,7 @@
 #include "PlayerCharacter.h"
 #include "DamageSimulation.h"
 #include "Ability.h"
+#include "GlobalAbilityList.h"
 
 Ability *PriorityAction::getAbility() const
 {
@@ -23,42 +24,12 @@ void PriorityAction::setPredicate(const std::function<bool (PlayerCharacter *PC,
     predicate = value;
 }
 
-void PriorityAction::execute(PlayerCharacter *PC, std::vector<Enemy *> &enemyList, float timestamp)
+void PriorityAction::execute(PlayerCharacter *PC, std::vector<Enemy *> &enemyList, float timestamp, bool shouldTriggerCooldown)
 {
     if (this->getAbility() != nullptr) {
-        this->getAbility()->triggerResourceCost(PC, timestamp);
-        int32_t damage = DamageSimulation::getDamageForAbility(this->getAbility(), PC);
-        bool isCritical;
-        damage = PC->maybeApplyCritDamage(this->getAbility(), damage, isCritical);
-        
-        this->getAbility()->triggerCooldown(PC, timestamp, this->getIgnoreGcd());
-        int32_t resourceBefore = PC->getResource();
-        int32_t damageDone = 0;
-        if (this->getAbility()->isDamageAbility()) {
-            if (this->getAbility()->getAoeMaxTargets() > 0) {
-                for (int i=0; i<this->getAbility()->getAoeMaxTargets(); ++i) {
-                    if (i >= enemyList.size()) {
-                        break;
-                    }
-                    damageDone += enemyList[i]->applyDamage(PC, damage, isCritical, timestamp, this->getAbility());
-                }
-            }
-            else {
-                damageDone += PC->getTarget()->applyDamage(PC, damage, isCritical, timestamp, this->getAbility());
-            }
-        }
-        if (this->getAbility()->getGrantedBuff() != nullptr) {
-            bool isFree = this->getIgnoreResourceCost() && this->getIgnoreGcd();
-            PC->applyBuff(PC, timestamp, this->getAbility()->getGrantedBuff(), isFree);
-        }
-        if (this->getAbility()->getGrantedDebuff() != nullptr) {
-            PC->getTarget()->applyDebuff(PC, timestamp, this->getAbility()->getGrantedDebuff());
-        }
-        this->getAbility()->triggerResourceGeneration(PC, damageDone, isCritical, timestamp);
-        int32_t resourceAfter = PC->getResource();
-        if (resourceAfter > resourceBefore || this->getAbility()->getResourceGenerationFunction() != nullptr) {
-            int32_t resourceDiff = resourceAfter - resourceBefore;
-            COMBAT_LOG(timestamp, PC, "Rage is at "<<PC->getResource()<<" (gained "<<resourceDiff<<" rage)");
+        this->getAbility()->execute(PC, enemyList, timestamp, this->getIgnoreGcd(), this->getIgnoreResourceCost(), shouldTriggerCooldown);
+        if (!PC->isWhiteAttack(this->getAbility())) {
+            PC->setLastUsedAction(this);
         }
     }
 }
@@ -144,8 +115,20 @@ bool PriorityAction::isAnyAutoAttack()
     return this->isMainhandAutoAttack() || this->isOffhandAutoAttack();
 }
 
+bool PriorityAction::getSkipToNextActionIfUseConditionFails() const
+{
+    return skipToNextActionIfUseConditionFails;
+}
+
+void PriorityAction::setSkipToNextActionIfUseConditionFails(bool value)
+{
+    skipToNextActionIfUseConditionFails = value;
+}
+
 PriorityAction::PriorityAction(Ability *ability, int32_t rank)
 {
     this->ability = ability;
-    this->ability->setRank(rank);
+    if (this->ability != nullptr) {
+        this->ability->setRank(rank);
+    }
 }

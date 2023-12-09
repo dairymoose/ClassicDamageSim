@@ -3,6 +3,7 @@
 #include "Weapon.h"
 #include "DamageSimulation.h"
 #include "PlayerClass.h"
+#include <QInputDialog>
 
 void MainWindow::simSetup()
 {
@@ -26,11 +27,17 @@ void MainWindow::simSetup()
         PC->setIntellect(26);
         PC->setSpirit(59);
         PC->setArmor(1310);
-        PC->addTalent("Two-Handed Weapon Specialization", 4); 
+        //PC->addTalent("Two-Handed Weapon Specialization", 4); 
+        //PC->addTalent("Anger Management", 1);
+        //PC->addTalent("Impale", 2);
         PC->addTalent("Improved Charge", 2);
-        PC->addTalent("Anger Management", 1);
         PC->addTalent("Improved Rend", 3);
-        PC->addTalent("Impale", 2);
+        PC->addTalent("Deep Wounds", 1);
+        PC->addTalent("Improved Heroic Strike", 2);
+        PC->addTalent("Improved Overpower", 1);
+        PC->getRunes().push_back(new Rune("Consumed by Rage"));
+        //PC->getRunes().push_back(new Rune("Frenzied Assault"));
+        //PC->getRunes().push_back(new Rune("Blood Frenzy"));
         Weapon *twoHander = new Weapon();
         twoHander->setMinDamage(92);
         twoHander->setMaxDamage(139);
@@ -42,12 +49,18 @@ void MainWindow::simSetup()
     if (enemy == nullptr) {
         enemy = new Enemy();
         enemy->setName("Target Dummy");
-        enemy->setHp(3000);
+        enemy->setHp(20000);
         enemy->setPhysicalDamageReduction(0.25f);
+        enemy->setLevel(28);
         sim->getEnemyList().push_back(enemy);
+        if (actionsDialog != nullptr) {
+            actionsDialog->setEnemyListPtr(&sim->getEnemyList());
+        }
     }
     static bool didPreBattleShout;
     didPreBattleShout = false;
+    static bool didPreWildStrikes;
+    didPreWildStrikes = false;
     if (availableActionsForClass == nullptr) {
         availableActionsForClass = new PriorityActionList();
         
@@ -127,6 +140,44 @@ void MainWindow::simSetup()
             PA->setInternalName("heroic_strike");
             availableActionsForClass->getPriorityActions().push_back(PA);
         }
+        {
+            PriorityAction *PA = new PriorityAction(gal->QuickStrike, 1);
+            PA->setInternalName("quick_strike");
+            availableActionsForClass->getPriorityActions().push_back(PA);
+        }
+        {
+            PriorityAction *PA = new PriorityAction(gal->RagingBlow, 1);
+            PA->setInternalName("raging_blow");
+            availableActionsForClass->getPriorityActions().push_back(PA);
+        }
+        {
+            PriorityAction *PA = new PriorityAction(nullptr, 1);
+            PA->setNameOverride("Wait for 80 rage");
+            PA->setInternalName("wait_for_rage");
+            PA->setSkipToNextActionIfUseConditionFails(false);
+            SET_PREDICATE_WITH_TEXT(PA, [](PlayerCharacter *PC, float timestamp){if (PC->getResource() >= 80) return true; return false;});
+            availableActionsForClass->getPriorityActions().push_back(PA);
+        }
+        {
+            PriorityAction *PA = new PriorityAction(gal->QuickStrike, 1);
+            PA->setNameOverride("Quick Strike (Follow-Up Only)");
+            PA->setInternalName("qs_follow_up");
+            SET_PREDICATE_WITH_TEXT(PA, [](PlayerCharacter *PC, float timestamp){if (PC->getLastUsedAction() == PC->getPriorityActionList()->getActionFromInternalName("quick_strike")) return true; return false;});
+            availableActionsForClass->getPriorityActions().push_back(PA);
+        }
+        {
+            PriorityAction *PA = new PriorityAction(gal->FreeWildStrikes, 1);
+            PA->setNameOverride("Start: Free Wild Strikes");
+            PA->setIgnoreGcd(true);
+            PA->setIgnoreResourceCost(true);
+            SET_PREDICATE_WITH_TEXT(PA, [&](PlayerCharacter *PC, float timestamp) {if (!didPreWildStrikes){didPreWildStrikes=true;return true;} return false;});
+            availableActionsForClass->getPriorityActions().push_back(PA);
+        }
+        {
+            PriorityAction *PA = new PriorityAction(gal->Overpower, 1);
+            PA->setInternalName("overpower");
+            availableActionsForClass->getPriorityActions().push_back(PA);
+        }
     }
     if (PAL == nullptr) {
         PAL = new PriorityActionList();
@@ -173,13 +224,19 @@ void MainWindow::on_simButton_clicked()
 {
     this->simSetup();
     
+    PC->getCombatLog()->setEnabled(true);
     this->sim->reset();
+    sim->resetIterationsData();
     sim->simulate(PAL);
     this->ui->simOutput->clear();
     for (auto& text : PC->getCombatLog()->getLogText()) {
         //this->ui->simOutput->appendPlainText(QString::fromStdString(text));
         this->ui->simOutput->appendHtml(QString::fromStdString(text));
     }
+    this->ui->simOutput->appendHtml("<br>");
+    std::stringstream ss;
+    this->sim->printIterationSummary(ss);
+    this->ui->simOutput->appendHtml(QString::fromStdString(ss.str()));
 }
 
 void MainWindow::on_actionsButton_clicked()
@@ -211,4 +268,26 @@ void MainWindow::on_talentsButton_clicked()
     
     //talentsDialog->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
     talentsDialog->show();
+}
+
+void MainWindow::on_iterateButton_clicked()
+{
+    QInputDialog qin;
+    qin.exec();
+    int value = qin.textValue().toInt();
+    if (value > 0) {
+        this->simSetup();
+        this->ui->simOutput->clear();
+        
+        sim->resetIterationsData();
+        PC->getCombatLog()->setEnabled(false);
+        
+        for (int i=0; i<value; ++i) {
+            this->sim->reset();
+            sim->simulate(PAL);
+        }
+        std::stringstream ss;
+        this->sim->printIterationSummary(ss);
+        this->ui->simOutput->appendHtml(QString::fromStdString(ss.str()));
+    }
 }

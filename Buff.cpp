@@ -41,18 +41,68 @@ void Buff::setOnBuffTick(const std::function<void (Combatant *Caster, Combatant 
     onBuffTick = value;
 }
 
+std::function<float (Combatant *Cbt)> Buff::getOnGetMeleeAutoAttackMultiplier() const
+{
+    return onGetMeleeAutoAttackMultiplier;
+}
+
+void Buff::setOnGetMeleeAutoAttackMultiplier(const std::function<float (Combatant *Cbt)> &value)
+{
+    onGetMeleeAutoAttackMultiplier = value;
+}
+
+std::function<void (Combatant *Cbt)> Buff::getOnAutoAttack() const
+{
+    return onAutoAttack;
+}
+
+void Buff::setOnAutoAttack(const std::function<void (Combatant *Cbt)> &value)
+{
+    onAutoAttack = value;
+}
+
+std::function<void (Combatant *Cbt, float timestamp)> Buff::getOnAbilityDamageMelee() const
+{
+    return onAbilityDamageMelee;
+}
+
+void Buff::setOnAbilityDamageMelee(const std::function<void (Combatant *Cbt, float timestamp)> &value)
+{
+    onAbilityDamageMelee = value;
+}
+
+AbilityDamageType Buff::getAbilityDamageType() const
+{
+    return abilityDamageType;
+}
+
+void Buff::setAbilityDamageType(const AbilityDamageType &value)
+{
+    abilityDamageType = value;
+}
+
+bool Buff::getIgnoresArmor() const
+{
+    return ignoresArmor;
+}
+
+void Buff::setIgnoresArmor(bool value)
+{
+    ignoresArmor = value;
+}
+
 Buff::Buff(std::string name, Ability *parent)
 {
     this->name = name;
     this->parent = parent;
 }
 
-std::function<int32_t (int32_t rank, int32_t attackPowerIn)> Buff::getOnCalculateAttackPower() const
+std::function<int32_t (Combatant *Cbt, int32_t rank, int32_t attackPowerIn)> Buff::getOnCalculateAttackPower() const
 {
     return onCalculateAttackPower;
 }
 
-void Buff::setOnCalculateAttackPower(const std::function<int32_t (int32_t rank, int32_t attackPowerIn)> &value)
+void Buff::setOnCalculateAttackPower(const std::function<int32_t (Combatant *Cbt, int32_t rank, int32_t attackPowerIn)> &value)
 {
     onCalculateAttackPower = value;
 }

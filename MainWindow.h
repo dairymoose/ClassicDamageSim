@@ -29,6 +29,8 @@ private slots:
     
     void on_talentsButton_clicked();
     
+    void on_iterateButton_clicked();
+    
 private:
     void simSetup();
     void simCleanup();

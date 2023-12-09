@@ -7,6 +7,7 @@
 #include "Combatant.h"
 #include "Enemy.h"
 #include "Talent.h"
+#include "Rune.h"
 class PriorityActionList;
 
 class PlayerCharacter : public Combatant
@@ -16,19 +17,22 @@ class PlayerCharacter : public Combatant
     
     Enemy *target = nullptr;
     PriorityActionList *priorityActionList = nullptr;
+    PriorityAction *lastUsedAction = nullptr;
     
-    int32_t level;
-    int32_t resource;
-    int32_t resourceMax;
+    float globalDamageModifier = 1.0f;
     
     std::vector<Talent *> talents;
+    std::vector<Rune *> runes;
     
     bool alwaysUseAverageDamage = false;
     bool canCrit = true;
     bool bakeCritIntoAverageDamage = false;
+    bool bakeWildStrikesIntoAverageDamage = false;
     
     float baseCritStrikeDamageMultipier = 2.0f;
     float critChance = 0.05f;
+    
+    int32_t attackPowerOverride = -1;
     
     int32_t strength;
     int32_t agility;
@@ -73,6 +77,8 @@ public:
     int32_t getStrength() const;
     void setStrength(const int32_t &value);
     
+    int32_t getCalculatedWeaponSkill() override;
+    
     void disableAutoAttack();
     void enableAndResetAutoAttack(float timestamp);
     
@@ -86,6 +92,7 @@ public:
     
     float getRandomFloat();
     int32_t maybeApplyCritDamage(Ability *source, int32_t value, bool& didCrit);
+    int32_t applyCritDamage(Ability *source, int32_t value);
     bool isWhiteAttack(Ability *ability);
     float getCritStrikeDamageMultiplier(bool whiteAttack);
     
@@ -113,10 +120,6 @@ public:
     void initResourceValue();
     int32_t getLevel() const;
     void setLevel(const int32_t &value);
-    int32_t getResource() const;
-    void setResource(const int32_t &value);
-    int32_t getResourceMax() const;
-    void setResourceMax(const int32_t &value);
     bool getAlwaysUseAverageDamage() const;
     void setAlwaysUseAverageDamage(bool value);
     Enemy *getTarget() const;
@@ -169,6 +172,20 @@ public:
     void setNeckItem(Item *value);
     Item *getHeadItem() const;
     void setHeadItem(Item *value);
+    std::vector<Rune *>& getRunes();
+    bool hasRune(std::string runeName);
+    PriorityAction *getLastUsedAction() const;
+    void setLastUsedAction(PriorityAction *value);
+    bool getBakeCritIntoAverageDamage() const;
+    void setBakeCritIntoAverageDamage(bool value);
+    bool getCanCrit() const;
+    void setCanCrit(bool value);
+    int32_t getAttackPowerOverride() const;
+    void setAttackPowerOverride(const int32_t &value);
+    bool getBakeWildStrikesIntoAverageDamage() const;
+    void setBakeWildStrikesIntoAverageDamage(bool value);
+    float getGlobalDamageModifier() const;
+    void setGlobalDamageModifier(float value);
 };
 
 #endif // PLAYERCHARACTER_H

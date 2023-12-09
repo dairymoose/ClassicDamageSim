@@ -20,6 +20,14 @@ public:
     Ability *Charge = nullptr;
     Ability *Bloodrage = nullptr;
     Ability *HeroicStrike = nullptr;
+    Ability *QuickStrike = nullptr;
+    Ability *RagingBlow = nullptr;
+    Ability *FreeWildStrikes = nullptr;
+    Ability *Overpower = nullptr;
+    Buff *Enrage = nullptr;
+    Buff *WildStrikes = nullptr;
+    Buff *DeepWounds = nullptr;
+    bool inExtraAttack = false;
     
     bool didPrintStats = false;
     bool didCharge = false;
@@ -27,6 +35,8 @@ public:
     void resetFields();
     
     GlobalAbilityList();
+    
+    static GlobalAbilityList* activeList;
 };
 
 #endif // GLOBALABILITYLIST_H

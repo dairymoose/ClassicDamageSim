@@ -5,6 +5,7 @@
 #include <regex>
 #include <QPushButton>
 #include <QMessageBox>
+#include <QFileDialog>
 #include "InstantTooltipLabel.h"
 
 ActionsDialog::ActionsDialog(QWidget *parent) :
@@ -29,6 +30,9 @@ void ActionsDialog::clearAllPriorityActions()
 
 void ActionsDialog::transferPriorityActionFromExistingDialog(ActionsDialog *removeFrom, PriorityAction *action)
 {
+    if (action == nullptr)
+        return;
+
     this->addPriorityAction(action);
     removeFrom->removePriorityAction(action);
     
@@ -52,7 +56,38 @@ void ActionsDialog::removePriorityAction(PriorityAction *toRemove)
 }
 
 void ActionsDialog::addPriorityAction(PriorityAction *action) {
-    this->addPriorityActionUi(action, action->getNameOverride(), action->getAbility()->getName(), action->getPredicateText());
+    std::string abilityName = "";
+    if (action->getAbility() != nullptr) {
+        abilityName = action->getAbility()->getName();
+    }
+    this->addPriorityActionUi(action, action->getNameOverride(), abilityName, action->getPredicateText());
+}
+
+void ActionsDialog::addPriorityActionByInternalName(std::string internalName)
+{
+    if (!this->isClassActionDialog && this->getCurrentPriorityActionList() != nullptr) {
+        this->transferPriorityActionFromExistingDialog(this->classActionsDialog, this->getClassActionsDialog()->getCurrentPriorityActionList()->getActionFromInternalName(internalName));
+    }
+}
+
+bool ActionsDialog::hasPriorityAction(PriorityAction *action)
+{
+    if (action == nullptr)
+        return false;
+    for (auto& widget : this->priorityActionWidgets) {
+        if (widget->getPriorityAction() == action)
+            return true;
+    }
+    return false;
+}
+
+bool ActionsDialog::hasPriorityActionByInternalName(std::string name)
+{
+    if (this->getCurrentPriorityActionList() != nullptr) {
+        PriorityAction *action = this->getCurrentPriorityActionList()->getActionFromInternalName(name);
+        return this->hasPriorityAction(action);
+    }
+    return false;
 }
 
 void ActionsDialog::addPriorityActionUi(PriorityAction *action, std::string nameOverride, std::string name, std::string condition)
@@ -76,6 +111,7 @@ void ActionsDialog::addPriorityActionUi(PriorityAction *action, std::string name
     QLabel *abilityIconLabel = SPA->findChild<QLabel *>("abilityIcon");
     if (abilityIconLabel != nullptr) {
         InstantTooltipLabel *itl = (InstantTooltipLabel *) abilityIconLabel;
+        itl->setEnemyListPtr(this->getEnemyListPtr());
         itl->setAbility(action->getAbility());
         itl->setPC(this->PC);
         abilityIconLabel->setPixmap(QPixmap(QString::fromStdString(abilityIcon)));
@@ -151,20 +187,26 @@ void ActionsDialog::addPriorityActionList(PriorityActionList *PAL)
     }
     this->currentPriorityActionList = PAL;
     for (int i=0; i<PAL->getPriorityActions().size(); ++i) {
-        if (PAL->getPriorityActions()[i]->getAbility() != nullptr) {
-            this->addPriorityAction(PAL->getPriorityActions()[i]);
-        }
+        this->addPriorityAction(PAL->getPriorityActions()[i]);
     }
     
     if (this->isClassActionDialog) {
         QDialogButtonBox *buttonBox = this->findChild<QDialogButtonBox *>("buttonBox");
         QPushButton *addBtn = this->findChild<QPushButton *>("addButton");
+        QPushButton *saveBtn = this->findChild<QPushButton *>("saveButton");
+        QPushButton *loadBtn = this->findChild<QPushButton *>("loadButton");
         
         if (buttonBox != nullptr) {
             buttonBox->hide();
         }
         if (addBtn != nullptr) {
             addBtn->setText("Close");
+        }
+        if (saveBtn != nullptr) {
+            saveBtn->hide();
+        }
+        if (loadBtn != nullptr) {
+            loadBtn->hide();
         }
     }
 }
@@ -203,6 +245,16 @@ void ActionsDialog::on_addButton_clicked()
     }
 }
 
+std::vector<Enemy *> *ActionsDialog::getEnemyListPtr() const
+{
+    return enemyListPtr;
+}
+
+void ActionsDialog::setEnemyListPtr(std::vector<Enemy *> *value)
+{
+    enemyListPtr = value;
+}
+
 ActionsDialog *ActionsDialog::getBaseActionsDialog() const
 {
     return baseActionsDialog;
@@ -219,6 +271,7 @@ void ActionsDialog::showEvent(QShowEvent *showEvent)
     
     if (classActionsDialog == nullptr && this->classPriorityActionList != nullptr) {
         classActionsDialog = new ActionsDialog();
+        classActionsDialog->setEnemyListPtr(this->getEnemyListPtr());
         classActionsDialog->setPC(this->getPC());
         classActionsDialog->setIsClassActionDialog(true);
         classActionsDialog->setBaseActionsDialog(this);
@@ -227,7 +280,7 @@ void ActionsDialog::showEvent(QShowEvent *showEvent)
         classActionsDialog->setWindowTitle("Class Actions");
     }
 }
-#include <iostream>
+
 void ActionsDialog::swapActionsByIndex(int32_t indexFrom, int32_t indexTo)
 {
     PriorityAction *action = this->currentPriorityActionList->getPriorityActions()[indexFrom];
@@ -296,4 +349,43 @@ bool ActionsDialog::getIsClassActionDialog() const
 void ActionsDialog::setIsClassActionDialog(bool value)
 {
     isClassActionDialog = value;
+}
+
+void ActionsDialog::on_saveButton_clicked()
+{
+    QFileDialog qfd;
+    qfd.setDefaultSuffix(".txt");
+    QString result = qfd.getSaveFileName(this, QString(), QString(), "*.txt");
+    if (!result.isEmpty()) {
+        QFile file(result);
+        file.open(QIODevice::WriteOnly);
+        for (auto& widget : this->priorityActionWidgets) {
+            file.write(widget->getPriorityAction()->getInternalName().c_str());
+            file.putChar('\n');
+        }
+        file.close();
+    }
+}
+
+void ActionsDialog::on_loadButton_clicked()
+{
+    QFileDialog qfd;
+    qfd.setDefaultSuffix(".txt");
+    QString result = qfd.getOpenFileName(this, QString(), QString(), "*.txt");
+    if (!result.isEmpty()) {
+        QFile file(result);
+        file.open(QIODevice::ReadOnly);
+        QByteArray bytes = file.readAll();
+        QString text(bytes);
+        QStringList tokens = text.split("\n");
+        for (QString token : tokens) {
+            if (!token.isEmpty()) {
+                std::string internalName = token.toStdString();
+                if (!this->hasPriorityActionByInternalName(internalName)) {
+                    this->addPriorityActionByInternalName(internalName);
+                }
+            }
+        }
+        file.close();
+    }
 }

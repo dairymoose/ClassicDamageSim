@@ -19,14 +19,16 @@ class PriorityAction
     std::string nameOverride = "";
     std::string internalName = "";
     bool disabled = false;
+    bool skipToNextActionIfUseConditionFails = true;
 public:
     PriorityAction(Ability *ability, int32_t rank=1);
     Ability *getAbility() const;
     void setAbility(Ability *value);
     std::function<bool (PlayerCharacter *PC, float timestamp)> getPredicate() const;
     void setPredicate(const std::function<bool (PlayerCharacter *PC, float timestamp)> &value);
+    void triggerAbilityDamageMeleeHooks(PlayerCharacter *PC);
     
-    void execute(PlayerCharacter *PC, std::vector<Enemy *>& enemyList, float timestamp);
+    void execute(PlayerCharacter *PC, std::vector<Enemy *>& enemyList, float timestamp, bool shouldTriggerCooldown=true);
     bool getIgnoreGcd() const;
     void setIgnoreGcd(bool value);
     bool getIgnoreResourceCost() const;
@@ -45,6 +47,8 @@ public:
     bool isMainhandAutoAttack();
     bool isOffhandAutoAttack();
     bool isAnyAutoAttack();
+    bool getSkipToNextActionIfUseConditionFails() const;
+    void setSkipToNextActionIfUseConditionFails(bool value);
 };
 
 #endif // PRIORITYACTION_H

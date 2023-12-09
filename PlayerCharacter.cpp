@@ -2,6 +2,7 @@
 #include "Weapon.h"
 #include <random>
 #include "DamageSimulation.h"
+#include "GlobalAbilityList.h"
 
 int32_t PlayerCharacter::getIntellect() const
 {
@@ -63,10 +64,19 @@ void PlayerCharacter::setStrength(const int32_t &value)
     strength = value;
 }
 
+int32_t PlayerCharacter::getCalculatedWeaponSkill()
+{
+    int32_t racialBoost = 0;
+    if (this->getPlayerRace() == "Human") {
+        racialBoost = 5;
+    }
+    return Combatant::getCalculatedWeaponSkill() + racialBoost;
+}
+
 void PlayerCharacter::disableAutoAttack()
 {
-    PriorityAction *mhAttack = this->getPriorityActionList()->getActionFromAbilityName("Main-hand attack");
-    PriorityAction *ohAttack = this->getPriorityActionList()->getActionFromAbilityName("Off-hand attack");
+    PriorityAction *mhAttack = this->getPriorityActionList()->getMainHandAutoAttackAction();
+    PriorityAction *ohAttack = this->getPriorityActionList()->getOffHandAutoAttackAction();
     if (mhAttack)
         mhAttack->setDisabled(true);
     if (ohAttack)
@@ -75,8 +85,8 @@ void PlayerCharacter::disableAutoAttack()
 
 void PlayerCharacter::enableAndResetAutoAttack(float timestamp)
 {
-    PriorityAction *mhAttack = this->getPriorityActionList()->getActionFromAbilityName("Main-hand attack");
-    PriorityAction *ohAttack = this->getPriorityActionList()->getActionFromAbilityName("Off-hand attack");
+    PriorityAction *mhAttack = this->getPriorityActionList()->getMainHandAutoAttackAction();
+    PriorityAction *ohAttack = this->getPriorityActionList()->getOffHandAutoAttackAction();
     if (mhAttack) {
         mhAttack->setDisabled(false);
         mhAttack->getAbility()->triggerCooldown(this, timestamp, false);
@@ -127,8 +137,8 @@ bool PlayerCharacter::hasTwoHandedWeaponEquipped()
 int32_t PlayerCharacter::applyMeleeApBuffs(int32_t AP)
 {   
     for (int i=0; i<this->Buffs.size(); ++i) {
-        if (this->Buffs[i]->getBuff()->getOnCalculateAttackPower() != nullptr) {
-            AP = this->Buffs[i]->getBuff()->getOnCalculateAttackPower()(this->Buffs[i]->getBuff()->getParent()->getRank(), AP);
+        if (this->Buffs[i]->getBuff()->getOnCalculateAttackPower() != nullptr && this->Buffs[i]->getBuff()->getParent() != nullptr) {
+            AP = this->Buffs[i]->getBuff()->getOnCalculateAttackPower()(this, this->Buffs[i]->getBuff()->getParent()->getRank(), AP);
         }
     }
     return AP;
@@ -143,6 +153,7 @@ float PlayerCharacter::getRandomFloat()
 
 int32_t PlayerCharacter::maybeApplyCritDamage(Ability *source, int32_t value, bool& didCrit)
 {
+    didCrit = false;
     if (this->canCrit) {
         if (this->alwaysUseAverageDamage && this->bakeCritIntoAverageDamage) {
             float nonCritPortion = 1.0f - this->critChance;
@@ -156,6 +167,22 @@ int32_t PlayerCharacter::maybeApplyCritDamage(Ability *source, int32_t value, bo
             }
             if (didCrit)
                 value *= this->getCritStrikeDamageMultiplier(this->isWhiteAttack(source));
+            return value;
+        }
+    }
+    return value;
+}
+
+int32_t PlayerCharacter::applyCritDamage(Ability *source, int32_t value)
+{
+    if (this->canCrit) {
+        if (this->alwaysUseAverageDamage && this->bakeCritIntoAverageDamage) {
+            float nonCritPortion = 1.0f - this->critChance;
+            float critPortion = this->critChance;
+            int32_t weightedAverage = nonCritPortion*value + critPortion*(value*this->getCritStrikeDamageMultiplier(this->isWhiteAttack(source)));
+            return weightedAverage;
+        } else {
+            value *= this->getCritStrikeDamageMultiplier(this->isWhiteAttack(source));
             return value;
         }
     }
@@ -209,6 +236,7 @@ float PlayerCharacter::calculateGlobalDamageBonus()
     if (this->hasTwoHandedWeaponEquipped()) {
         specDamageBonus = 1.0f + spec2h/100.0f;
     }
+    specDamageBonus *= this->globalDamageModifier;
     return specDamageBonus;
 }
 
@@ -217,8 +245,7 @@ int32_t PlayerCharacter::calculateSimulatedMainhandSwing()
     if (this->alwaysUseAverageDamage) {
         return this->calculatedMainhandWeaponAverageDamage();
     }
-    std::uniform_int_distribution<> dist(this->calculatedMainhandWeaponMinDamage(), this->calculatedMainhandWeaponMaxDamage());
-    return dist(DamageSimulation::getRandEngine());
+    return DamageSimulation::randomIntBetween(this->calculatedMainhandWeaponMinDamage(), this->calculatedMainhandWeaponMaxDamage());
 }
 
 int32_t PlayerCharacter::calculateSimulatedOffhandSwing()
@@ -226,8 +253,7 @@ int32_t PlayerCharacter::calculateSimulatedOffhandSwing()
     if (this->alwaysUseAverageDamage) {
         return this->calculatedOffhandWeaponAverageDamage();
     }
-    std::uniform_int_distribution<> dist(this->calculatedOffhandWeaponMinDamage(), this->calculatedOffhandWeaponMaxDamage());
-    return dist(DamageSimulation::getRandEngine());
+    return DamageSimulation::randomIntBetween(this->calculatedOffhandWeaponMinDamage(), this->calculatedOffhandWeaponMaxDamage());
 }
 
 float PlayerCharacter::calculateDpsFromAttackPower(int32_t attackPower)
@@ -258,10 +284,14 @@ float PlayerCharacter::calculateDpsFromAttackPower(int32_t attackPower)
  */
 int32_t PlayerCharacter::calculateMeleeAttackPower()
 {
-    if (this->playerClass.cls == this->playerClass.WARRIOR) {
-        return applyMeleeApBuffs(this->level*3 + (this->strength*2-20));
+    if (this->attackPowerOverride == -1) {
+        if (this->playerClass.cls == this->playerClass.WARRIOR) {
+            return applyMeleeApBuffs(this->level*3 + (this->strength*2-20));
+        }
+        return 0;
+    } else {
+        return this->attackPowerOverride;
     }
-    return 0;
 }
 
 int32_t PlayerCharacter::calculatedWeaponMinDamage()
@@ -348,8 +378,12 @@ int32_t PlayerCharacter::calculatedWeaponAverageDamage()
 float PlayerCharacter::calculatedMainhandWeaponSpeed()
 {
     if (this->mainHandItem != nullptr) {
+        float speedBoost = 1.0f;
+        if (this->hasRune("Frenzied Assault") && this->hasTwoHandedWeaponEquipped()) {
+            speedBoost = 1.20f;
+        }
         if (Weapon *weapon = dynamic_cast<Weapon *>(this->mainHandItem)) {
-            return weapon->getWeaponSpeed();
+            return weapon->getWeaponSpeed()/speedBoost;
         }
     }
     return 2.0f;
@@ -358,8 +392,9 @@ float PlayerCharacter::calculatedMainhandWeaponSpeed()
 float PlayerCharacter::calculatedOffhandWeaponSpeed()
 {
     if (this->offHandItem != nullptr) {
+        float speedBoost = 1.0f;
         if (Weapon *weapon = dynamic_cast<Weapon *>(this->offHandItem)) {
-            return weapon->getWeaponSpeed();
+            return weapon->getWeaponSpeed()/speedBoost;
         }
     }
     return 0.0f;
@@ -422,33 +457,6 @@ void PlayerCharacter::setLevel(const int32_t &value)
     level = value;
     
     this->downrankAbilitiesIfRequired();
-}
-
-int32_t PlayerCharacter::getResource() const
-{
-    return resource;
-}
-
-void PlayerCharacter::setResource(const int32_t &value)
-{
-    resource = value;
-    
-    if (this->resource > this->resourceMax) {
-        this->resource = this->resourceMax;
-    }
-    if (this->resource < 0) {
-        this->resource = 0;
-    }
-}
-
-int32_t PlayerCharacter::getResourceMax() const
-{
-    return resourceMax;
-}
-
-void PlayerCharacter::setResourceMax(const int32_t &value)
-{
-    resourceMax = value;
 }
 
 bool PlayerCharacter::getAlwaysUseAverageDamage() const
@@ -686,6 +694,80 @@ Item *PlayerCharacter::getHeadItem() const
 void PlayerCharacter::setHeadItem(Item *value)
 {
     headItem = value;
+}
+
+std::vector<Rune *>& PlayerCharacter::getRunes()
+{
+    return runes;
+}
+
+bool PlayerCharacter::hasRune(std::string runeName)
+{
+    for (int i=0; i<this->runes.size(); ++i) {
+        if (this->runes[i]->getName() == runeName)
+            return true;
+    }
+    return false;
+}
+
+PriorityAction *PlayerCharacter::getLastUsedAction() const
+{
+    return lastUsedAction;
+}
+
+void PlayerCharacter::setLastUsedAction(PriorityAction *value)
+{
+    lastUsedAction = value;
+}
+
+bool PlayerCharacter::getBakeCritIntoAverageDamage() const
+{
+    return bakeCritIntoAverageDamage;
+}
+
+void PlayerCharacter::setBakeCritIntoAverageDamage(bool value)
+{
+    bakeCritIntoAverageDamage = value;
+}
+
+bool PlayerCharacter::getCanCrit() const
+{
+    return canCrit;
+}
+
+void PlayerCharacter::setCanCrit(bool value)
+{
+    canCrit = value;
+}
+
+int32_t PlayerCharacter::getAttackPowerOverride() const
+{
+    return attackPowerOverride;
+}
+
+void PlayerCharacter::setAttackPowerOverride(const int32_t &value)
+{
+    attackPowerOverride = value;
+}
+
+bool PlayerCharacter::getBakeWildStrikesIntoAverageDamage() const
+{
+    return bakeWildStrikesIntoAverageDamage;
+}
+
+void PlayerCharacter::setBakeWildStrikesIntoAverageDamage(bool value)
+{
+    bakeWildStrikesIntoAverageDamage = value;
+}
+
+float PlayerCharacter::getGlobalDamageModifier() const
+{
+    return globalDamageModifier;
+}
+
+void PlayerCharacter::setGlobalDamageModifier(float value)
+{
+    globalDamageModifier = value;
 }
 
 PlayerCharacter::PlayerCharacter()

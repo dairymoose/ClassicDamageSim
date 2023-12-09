@@ -26,6 +26,8 @@ public:
     PriorityAction *getActionFromInternalName(std::string name);
     PriorityAction *addNewAction(PriorityAction *action);
     bool removeExistingAction(PriorityAction *action);
+    PriorityAction *getMainHandAutoAttackAction();
+    PriorityAction *getOffHandAutoAttackAction();
     
     void resetAllAbilities();
 };

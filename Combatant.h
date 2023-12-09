@@ -5,11 +5,13 @@
 #include <vector>
 #include <sstream>
 #include <iomanip>
+#include <unordered_map>
 #include "Buff.h"
 #include "AppliedBuff.h"
 #include "CombatLog.h"
+#include "MeleeHitResult.h"
 
-#define COMBAT_LOG(timestamp, attacker, text) ({std::stringstream ss;ss<<FONT_BLUE<<"["<<std::fixed<<std::setprecision(1)<<timestamp<<"]"<<END_FONT<<" "<<text;attacker->getCombatLog()->getLogText().push_back(ss.str());})
+#define COMBAT_LOG(timestamp, attacker, text) ({if(attacker->getCombatLog() != nullptr && attacker->getCombatLog()->getEnabled()){std::stringstream ss;ss<<FONT_BLUE<<"["<<std::fixed<<std::setprecision(1)<<timestamp<<"]"<<END_FONT<<" "<<text;attacker->getCombatLog()->getLogText().push_back(ss.str());}})
 class Ability;
 class PriorityAction;
 
@@ -17,6 +19,10 @@ class Combatant
 {
 protected:
     std::string name = "";
+    
+    int32_t level;
+    int32_t resource;
+    int32_t resourceMax;
     
     int32_t currentHp;
     int32_t maxHp;
@@ -42,7 +48,25 @@ protected:
     
     PriorityAction *replaceMeleeAction = nullptr;
     
-    int32_t applyDamageInternal(std::string damageTypeText, Combatant *attacker, int32_t damage, bool isCritical, float timestamp, Ability *abilitySource);
+    float lastDodgeTimestamp = -1.0f;
+    
+    std::unordered_map<Ability *, int32_t> damageDoneByAbility;
+    std::unordered_map<Buff *, int32_t> damageDoneByBuff;
+    
+    template<typename T>
+    void combatLogInternal(std::string damageTypeText, Combatant *attacker, int32_t damage, MeleeHitResult mhr, float timestamp, T *abilitySource) {
+        std::string abilityName = abilitySource->getName();
+        if (mhr == MeleeHitResult::CriticalHit || mhr == MeleeHitResult::OrdinaryHit)
+            COMBAT_LOG(timestamp, attacker, ATTACKER_FONT_COLOR<<attacker->getName()<<END_FONT<<" did "<<DAMAGE_FONT_COLOR<<damage<<END_FONT<<(mhr == MeleeHitResult::CriticalHit ? " *CRITICAL*" : "")<<" "<<damageTypeText<<" damage to "<<RECEIVER_FONT_COLOR<<this->getName()<<END_FONT<<" from "<<ABILITY_FONT_COLOR<<abilityName<<END_FONT);
+        else if (mhr == MeleeHitResult::GlancingBlow)
+            COMBAT_LOG(timestamp, attacker, ATTACKER_FONT_COLOR<<attacker->getName()<<END_FONT<<" did "<<DAMAGE_FONT_COLOR<<damage<<END_FONT<<" glancing "<<damageTypeText<<" damage to "<<RECEIVER_FONT_COLOR<<this->getName()<<END_FONT<<" from "<<ABILITY_FONT_COLOR<<abilityName<<END_FONT);
+        else if (mhr == MeleeHitResult::Miss)
+            COMBAT_LOG(timestamp, attacker, ATTACKER_FONT_COLOR<<attacker->getName()<<END_FONT<<" missed "<<RECEIVER_FONT_COLOR<<this->getName()<<END_FONT<<" with "<<ABILITY_FONT_COLOR<<abilityName<<END_FONT);
+        else if (mhr == MeleeHitResult::Dodge)
+            COMBAT_LOG(timestamp, attacker, ATTACKER_FONT_COLOR<<attacker->getName()<<END_FONT<<" was dodged by "<<RECEIVER_FONT_COLOR<<this->getName()<<END_FONT<<" with "<<ABILITY_FONT_COLOR<<abilityName<<END_FONT);
+    }
+    int32_t applyDamageInternal(std::string damageTypeText, Combatant *attacker, int32_t damage, MeleeHitResult mhr, float timestamp, Ability *abilitySource);
+    int32_t applyDamageInternal(std::string damageTypeText, Combatant *attacker, int32_t damage, MeleeHitResult mhr, float timestamp, Buff *buffSource);
 public:
     Combatant();
     virtual ~Combatant();
@@ -51,23 +75,33 @@ public:
     float getMagicalDamageReduction() const;
     void setMagicalDamageReduction(float value);
     
+    virtual int32_t getCalculatedDefense();
+    virtual int32_t getCalculatedWeaponSkill();
+    
     bool isSpellcastFinished(float timestamp);
     void triggerSpellcastFinished();
     void applyDotDamage(PlayerCharacter *PC, float timestamp);
     void tickBuffs(PlayerCharacter *PC, float timestamp);
-    int32_t applyDamage(Combatant *attacker, int32_t damage, bool isCritical, float timestamp, Ability *abilitySource);
-    int32_t applyPhysicalDamage(Combatant *attacker, int32_t damage, bool isCritical, float timestamp, Ability *abilitySource);
-    int32_t applyMagicalDamage(Combatant *attacker, int32_t damage, bool isCritical, float timestamp, Ability *abilitySource);
-    int32_t applyArmorIgnoreDamage(Combatant *attacker, int32_t damage, bool isCritical, float timestamp, Ability *abilitySource);
-    void applyBuff(Combatant *attacker, float timestamp, Buff *buff, bool isFree);
+    
+    int32_t applyDamage(Combatant *attacker, int32_t damage, MeleeHitResult mhr, float timestamp, Ability *abilitySource);
+    int32_t applyPhysicalDamage(Combatant *attacker, int32_t damage, MeleeHitResult mhr, float timestamp, Ability *abilitySource);
+    int32_t applyMagicalDamage(Combatant *attacker, int32_t damage, MeleeHitResult mhr, float timestamp, Ability *abilitySource);
+    int32_t applyArmorIgnoreDamage(Combatant *attacker, int32_t damage, MeleeHitResult mhr, float timestamp, Ability *abilitySource);
+    
+    int32_t applyDamage(Combatant *attacker, int32_t damage, MeleeHitResult mhr, float timestamp, Buff *buffSource);
+    int32_t applyPhysicalDamage(Combatant *attacker, int32_t damage, MeleeHitResult mhr, float timestamp, Buff *buffSource);
+    int32_t applyMagicalDamage(Combatant *attacker, int32_t damage, MeleeHitResult mhr, float timestamp, Buff *buffSource);
+    int32_t applyArmorIgnoreDamage(Combatant *attacker, int32_t damage, MeleeHitResult mhr, float timestamp, Buff *buffSource);
+    
+    AppliedBuff *applyBuff(Combatant *attacker, float timestamp, Buff *buff, bool isFree);
     void applyDebuff(Combatant *attacker, float timestamp, Buff *debuff);
     bool isDead();
     bool hasBuff(Buff *Buff);
     bool hasDebuff(Buff *Debuff);
-    bool removeBuffByType(Buff *toRemove);
-    bool removeDebuffByType(Buff *toRemove);
-    bool removeBuff(AppliedBuff *toRemove);
-    bool removeDebuff(AppliedBuff *toRemove);
+    bool removeBuffByType(Buff *toRemove, float timestamp);
+    bool removeDebuffByType(Buff *toRemove, float timestamp);
+    bool removeBuff(AppliedBuff *toRemove, float timestamp);
+    bool removeDebuff(AppliedBuff *toRemove, float timestamp);
     void removeExpiredBuffs(float timestamp);
     void removeExpiredDebuffs(float timestamp);
     void clearAllBuffsAndDebuffsAndFreeMemory();
@@ -93,6 +127,20 @@ public:
     void setCastStartTime(float value);
     PriorityAction *getReplaceMeleeAction() const;
     void setReplaceMeleeAction(PriorityAction *value);
+    std::vector<AppliedBuff *>& getBuffs();
+    std::vector<AppliedBuff *>& getDebuffs();
+    float getGcdDuration() const;
+    void setGcdDuration(float value);
+    std::unordered_map<Ability *, int32_t>& getDamageDoneByAbility();
+    std::unordered_map<Buff *, int32_t>& getDamageDoneByBuff();
+    int32_t getLevel() const;
+    void setLevel(const int32_t &value);
+    int32_t getResource() const;
+    void setResource(const int32_t &value);
+    int32_t getResourceMax() const;
+    void setResourceMax(const int32_t &value);
+    float getLastDodgeTimestamp() const;
+    void setLastDodgeTimestamp(float value);
 };
 
 #endif // COMBATANT_H

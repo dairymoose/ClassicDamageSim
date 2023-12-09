@@ -42,6 +42,7 @@ SOURCES += \
         PlayerClass.cpp \
         PriorityAction.cpp \
         PriorityActionList.cpp \
+        Rune.cpp \
         SingularPriorityAction.cpp \
         Talent.cpp \
         TalentsDialog.cpp \
@@ -66,10 +67,12 @@ HEADERS += \
         Item.h \
         ItemSlot.h \
         MainWindow.h \
+        MeleeHitResult.h \
         PlayerCharacter.h \
         PlayerClass.h \
         PriorityAction.h \
         PriorityActionList.h \
+        Rune.h \
         SingularPriorityAction.h \
         Talent.h \
         TalentsDialog.h \
