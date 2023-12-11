@@ -70,6 +70,7 @@ public:
     bool hasEnoughResource(PlayerCharacter *PC, float timestamp);
     bool isOnCooldown(PlayerCharacter *PC, float timestamp);
     void triggerCooldown(PlayerCharacter *PC, float timestamp, bool actionIgnoresGcd);
+    void partialRefundResourceCost(PlayerCharacter *PC, float timestamp);
     void triggerResourceCost(PlayerCharacter *PC, float timestamp);
     void triggerResourceGeneration(PlayerCharacter *PC, int32_t damageDone, bool isCritical, float timestamp);
     AbilityDamageType getAbilityDamageType() const;

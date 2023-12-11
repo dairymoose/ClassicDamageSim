@@ -91,6 +91,46 @@ void Buff::setIgnoresArmor(bool value)
     ignoresArmor = value;
 }
 
+std::function<int32_t (PlayerCharacter *PC, int32_t rank)> Buff::getOnCalculateStrengthBoost() const
+{
+    return onCalculateStrengthBoost;
+}
+
+void Buff::setOnCalculateStrengthBoost(const std::function<int32_t (PlayerCharacter *PC, int32_t rank)> &value)
+{
+    onCalculateStrengthBoost = value;
+}
+
+std::function<int32_t (PlayerCharacter *PC, int32_t rank)> Buff::getOnCalculateAllStatsBoost() const
+{
+    return onCalculateAllStatsBoost;
+}
+
+void Buff::setOnCalculateAllStatsBoost(const std::function<int32_t (PlayerCharacter *PC, int32_t rank)> &value)
+{
+    onCalculateAllStatsBoost = value;
+}
+
+std::function<int32_t (PlayerCharacter *PC, int32_t rank)> Buff::getOnCalculateArmorBoost() const
+{
+    return onCalculateArmorBoost;
+}
+
+void Buff::setOnCalculateArmorBoost(const std::function<int32_t (PlayerCharacter *PC, int32_t rank)> &value)
+{
+    onCalculateArmorBoost = value;
+}
+
+std::function<float (PlayerCharacter *PC, int32_t rank)> Buff::getOnCalculatePercentStatBoost() const
+{
+    return onCalculatePercentStatBoost;
+}
+
+void Buff::setOnCalculatePercentStatBoost(const std::function<float (PlayerCharacter *PC, int32_t rank)> &value)
+{
+    onCalculatePercentStatBoost = value;
+}
+
 Buff::Buff(std::string name, Ability *parent)
 {
     this->name = name;

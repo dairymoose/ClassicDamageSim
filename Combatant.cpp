@@ -1,6 +1,7 @@
 #include "Combatant.h"
 #include "Ability.h"
 #include "DamageSimulation.h"
+#include "MeleeHitResult.h"
 
 float Combatant::getPhysicalDamageReduction() const
 {
@@ -137,12 +138,12 @@ void Combatant::setGcdDuration(float value)
     gcdDuration = value;
 }
 
-std::unordered_map<Ability *, int32_t>& Combatant::getDamageDoneByAbility()
+std::unordered_map<Ability *, TrackedDamageInfo> &Combatant::getDamageDoneByAbility()
 {
     return damageDoneByAbility;
 }
 
-std::unordered_map<Buff *, int32_t>& Combatant::getDamageDoneByBuff()
+std::unordered_map<Buff *, TrackedDamageInfo>& Combatant::getDamageDoneByBuff()
 {
     return damageDoneByBuff;
 }
@@ -194,6 +195,20 @@ void Combatant::setLastDodgeTimestamp(float value)
     lastDodgeTimestamp = value;
 }
 
+void Combatant::addNewAbilityToMap(Combatant *attacker, Ability *toAdd, MeleeHitResult mhr)
+{
+    attacker->damageDoneByAbility[toAdd] = {};
+    attacker->damageDoneByAbility[toAdd].event = toAdd->getName().append(getMeleeHitResultName(mhr));
+    attacker->damageDoneByAbility[toAdd].ability = toAdd;
+}
+
+void Combatant::addNewBuffToMap(Combatant *attacker, Buff *toAdd, MeleeHitResult mhr)
+{
+    attacker->damageDoneByBuff[toAdd] = {};
+    attacker->damageDoneByBuff[toAdd].event = toAdd->getName().append(getMeleeHitResultName(mhr));
+    attacker->damageDoneByBuff[toAdd].buff = toAdd;
+}
+
 int32_t Combatant::applyDamageInternal(std::string damageTypeText, Combatant *attacker, int32_t damage, MeleeHitResult mhr, float timestamp, Ability *abilitySource)
 {
     if (attacker != nullptr) {
@@ -203,10 +218,20 @@ int32_t Combatant::applyDamageInternal(std::string damageTypeText, Combatant *at
         int32_t sourceDamage = 0;
         auto&& found = attacker->damageDoneByAbility.find(abilitySource);
         if (found != attacker->damageDoneByAbility.end()) {
-            sourceDamage = found->second;
+            sourceDamage = found->second.damage;
+        } else {
+            this->addNewAbilityToMap(attacker, abilitySource, mhr);
         }
         sourceDamage += damage;
-        attacker->damageDoneByAbility[abilitySource] = sourceDamage;
+        attacker->damageDoneByAbility[abilitySource].damage = sourceDamage;
+        attacker->damageDoneByAbility[abilitySource].count++;
+        if (mhr == MeleeHitResult::CriticalHit) {
+            attacker->damageDoneByAbility[abilitySource].critOnlyDamage += damage;
+            attacker->damageDoneByAbility[abilitySource].critCount++;
+        } else if (mhr == MeleeHitResult::OrdinaryHit) {
+            attacker->damageDoneByAbility[abilitySource].nonCritDamage += damage;
+            attacker->damageDoneByAbility[abilitySource].nonCritCount++;
+        }
         
         this->currentHp -= damage;
         attacker->setDamageDone(attacker->getDamageDone() + damage);
@@ -224,16 +249,39 @@ int32_t Combatant::applyDamageInternal(std::string damageTypeText, Combatant *at
         int32_t sourceDamage = 0;
         auto&& found = attacker->damageDoneByBuff.find(buffSource);
         if (found != attacker->damageDoneByBuff.end()) {
-            sourceDamage = found->second;
+            sourceDamage = found->second.damage;
+        } else {
+            this->addNewBuffToMap(attacker, buffSource, mhr);
         }
         sourceDamage += damage;
-        attacker->damageDoneByBuff[buffSource] = sourceDamage;
+        attacker->damageDoneByBuff[buffSource].damage = sourceDamage;
+        attacker->damageDoneByBuff[buffSource].count++;
+        if (mhr == MeleeHitResult::CriticalHit) {
+            attacker->damageDoneByBuff[buffSource].critOnlyDamage += damage;
+            attacker->damageDoneByBuff[buffSource].critCount++;
+        } else if (mhr == MeleeHitResult::OrdinaryHit) {
+            attacker->damageDoneByBuff[buffSource].nonCritDamage += damage;
+            attacker->damageDoneByBuff[buffSource].nonCritCount++;
+        }
         
         this->currentHp -= damage;
         attacker->setDamageDone(attacker->getDamageDone() + damage);
         return damage;
     }
     return 0;
+}
+
+void Combatant::adjustUptimeForRemovedBuff(Buff *buff, float timestamp)
+{
+    if (buff == nullptr) {
+        return;
+    }
+    auto&& found = this->damageDoneByBuff.find(buff);
+    if (found != this->damageDoneByBuff.end()) {
+        //adjust duration to only be partial duration instead of full
+        this->damageDoneByBuff[buff].buffUptime -= this->damageDoneByBuff[buff].mostRecentBuffDuration;
+        this->damageDoneByBuff[buff].buffUptime += (timestamp - this->damageDoneByBuff[buff].mostRecentBuffTimestamp);
+    }
 }
 
 AppliedBuff *Combatant::applyBuff(Combatant *attacker, float timestamp, Buff *buff, bool isFree)
@@ -253,6 +301,16 @@ AppliedBuff *Combatant::applyBuff(Combatant *attacker, float timestamp, Buff *bu
                 AB->setAppliedTimestamp(timestamp);
                 AB->setLastTickedTimestamp(timestamp);
                 AB->setCapturedDuration(duration);
+                
+                auto&& found = attacker->damageDoneByBuff.find(buff);
+                if (found != attacker->damageDoneByBuff.end()) {
+                    attacker->damageDoneByBuff[buff].buffUptime += duration;
+                    attacker->damageDoneByBuff[buff].mostRecentBuffTimestamp = timestamp;
+                    attacker->damageDoneByBuff[buff].mostRecentBuffDuration = duration;
+                } else {
+                    this->addNewBuffToMap(attacker, buff, MeleeHitResult::OrdinaryHit);
+                }
+                
                 this->Buffs.push_back(AB);
                 return AB;
             }
@@ -278,6 +336,14 @@ void Combatant::applyDebuff(Combatant *attacker, float timestamp, Buff *debuff)
                 AB->setAppliedTimestamp(timestamp);
                 AB->setLastTickedTimestamp(timestamp);
                 AB->setCapturedDuration(duration);
+                
+                auto&& found = attacker->damageDoneByBuff.find(debuff);
+                if (found != attacker->damageDoneByBuff.end()) {
+                    attacker->damageDoneByBuff[debuff].buffUptime += duration;
+                } else {
+                    this->addNewBuffToMap(attacker, debuff, MeleeHitResult::OrdinaryHit);
+                }
+                
                 this->Debuffs.push_back(AB);
             }
         }
@@ -311,6 +377,7 @@ bool Combatant::removeBuffByType(Buff *toRemove, float timestamp)
 {
     for (auto&& it=this->Buffs.begin(); it!=this->Buffs.end(); ++it) {
         if ((*it)->getBuff() == toRemove) {
+            this->adjustUptimeForRemovedBuff(toRemove, timestamp);
             COMBAT_LOG(timestamp, this, "Buff "<<FONT_GREEN<<toRemove->getName()<<END_FONT<<" faded from "<<this->getName());
             this->Buffs.erase(it);
             return true;
@@ -323,6 +390,7 @@ bool Combatant::removeDebuffByType(Buff *toRemove, float timestamp)
 {
     for (auto&& it=this->Debuffs.begin(); it!=this->Debuffs.end(); ++it) {
         if ((*it)->getBuff() == toRemove) {
+            this->adjustUptimeForRemovedBuff(toRemove, timestamp);
             COMBAT_LOG(timestamp, this, "Debuff "<<FONT_RED<<toRemove->getName()<<END_FONT<<" faded from "<<this->getName());
             this->Debuffs.erase(it);
             return true;
@@ -335,6 +403,7 @@ bool Combatant::removeBuff(AppliedBuff *toRemove, float timestamp)
 {
     for (auto&& it=this->Buffs.begin(); it!=this->Buffs.end(); ++it) {
         if (*it == toRemove) {
+            this->adjustUptimeForRemovedBuff(toRemove->getBuff(), timestamp);
             COMBAT_LOG(timestamp, this, "Buff "<<FONT_GREEN<<toRemove->getBuff()->getName()<<END_FONT<<" faded from "<<this->getName());
             this->Buffs.erase(it);
             return true;
@@ -347,6 +416,7 @@ bool Combatant::removeDebuff(AppliedBuff *toRemove, float timestamp)
 {
     for (auto&& it=this->Debuffs.begin(); it!=this->Debuffs.end(); ++it) {
         if (*it == toRemove) {
+            this->adjustUptimeForRemovedBuff(toRemove->getBuff(), timestamp);
             COMBAT_LOG(timestamp, this, "Debuff "<<FONT_RED<<toRemove->getBuff()->getName()<<END_FONT<<" faded from "<<this->getName());
             this->Debuffs.erase(it);
             return true;
@@ -367,6 +437,7 @@ void Combatant::applyDotDamage(PlayerCharacter *PC, float timestamp)
                     rank = buff->getBuff()->getParent()->getRank();
                 }
                 int32_t damage = buff->getBuff()->getOnDotTickDamage()(PC, this, rank, buff->getTickCount(), buffDuration);
+                damage *= PC->calculateGlobalDamageBonus();
                 this->applyDamage((Combatant *)PC, damage, MeleeHitResult::OrdinaryHit, timestamp, buff->getBuff());
             }
         }

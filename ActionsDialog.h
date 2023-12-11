@@ -23,6 +23,7 @@ public:
     void addPriorityActionByInternalName(std::string internalName);
     bool hasPriorityAction(PriorityAction *action);
     bool hasPriorityActionByInternalName(std::string name);
+    void clearAllActions();
     void addPriorityActionList(PriorityActionList *PAL);
     void handleConditionsButtonClicked();
     void addClassPriorityActionList(PriorityActionList *PAL);

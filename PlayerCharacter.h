@@ -32,6 +32,8 @@ class PlayerCharacter : public Combatant
     float baseCritStrikeDamageMultipier = 2.0f;
     float critChance = 0.05f;
     
+    float hitChanceModifier = 0.0f;
+    
     int32_t attackPowerOverride = -1;
     
     int32_t strength;
@@ -76,6 +78,8 @@ public:
     void setAgility(const int32_t &value);
     int32_t getStrength() const;
     void setStrength(const int32_t &value);
+    
+    int32_t getFinalStrengthValue();
     
     int32_t getCalculatedWeaponSkill() override;
     
@@ -186,6 +190,8 @@ public:
     void setBakeWildStrikesIntoAverageDamage(bool value);
     float getGlobalDamageModifier() const;
     void setGlobalDamageModifier(float value);
+    float getHitChanceModifier() const;
+    void setHitChanceModifier(float value);
 };
 
 #endif // PLAYERCHARACTER_H

@@ -38,6 +38,7 @@ SOURCES += \
         GlobalAbilityList.cpp \
         InstantTooltipLabel.cpp \
         Item.cpp \
+        MeleeHitResult.cpp \
         PlayerCharacter.cpp \
         PlayerClass.cpp \
         PriorityAction.cpp \

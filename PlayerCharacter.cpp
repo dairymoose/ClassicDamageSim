@@ -64,6 +64,33 @@ void PlayerCharacter::setStrength(const int32_t &value)
     strength = value;
 }
 
+int32_t PlayerCharacter::getFinalStrengthValue()
+{
+    int32_t str = this->strength;
+    for (int i=0; i<this->Buffs.size(); ++i) {
+        int32_t rank = 0;
+        if (this->Buffs[i]->getBuff()->getParent() != nullptr) {
+            rank = this->Buffs[i]->getBuff()->getParent()->getRank();
+        }
+        if (this->Buffs[i]->getBuff()->getOnCalculateStrengthBoost() != nullptr) {
+            str += this->Buffs[i]->getBuff()->getOnCalculateStrengthBoost()(this, rank);
+        }
+        if (this->Buffs[i]->getBuff()->getOnCalculateAllStatsBoost() != nullptr) {
+            str += this->Buffs[i]->getBuff()->getOnCalculateAllStatsBoost()(this, rank);
+        }
+    }
+    for (int i=0; i<this->Buffs.size(); ++i) {
+        int32_t rank = 0;
+        if (this->Buffs[i]->getBuff()->getParent() != nullptr) {
+            rank = this->Buffs[i]->getBuff()->getParent()->getRank();
+        }
+        if (this->Buffs[i]->getBuff()->getOnCalculatePercentStatBoost() != nullptr) {
+            str *= this->Buffs[i]->getBuff()->getOnCalculatePercentStatBoost()(this, rank);
+        }
+    }
+    return str;
+}
+
 int32_t PlayerCharacter::getCalculatedWeaponSkill()
 {
     int32_t racialBoost = 0;
@@ -135,7 +162,7 @@ bool PlayerCharacter::hasTwoHandedWeaponEquipped()
 }
 
 int32_t PlayerCharacter::applyMeleeApBuffs(int32_t AP)
-{   
+{
     for (int i=0; i<this->Buffs.size(); ++i) {
         if (this->Buffs[i]->getBuff()->getOnCalculateAttackPower() != nullptr && this->Buffs[i]->getBuff()->getParent() != nullptr) {
             AP = this->Buffs[i]->getBuff()->getOnCalculateAttackPower()(this, this->Buffs[i]->getBuff()->getParent()->getRank(), AP);
@@ -236,6 +263,9 @@ float PlayerCharacter::calculateGlobalDamageBonus()
     if (this->hasTwoHandedWeaponEquipped()) {
         specDamageBonus = 1.0f + spec2h/100.0f;
     }
+    if (this->hasBuff(GlobalAbilityList::activeList->Enrage)) {
+        specDamageBonus *= 1.20f;
+    }
     specDamageBonus *= this->globalDamageModifier;
     return specDamageBonus;
 }
@@ -286,7 +316,7 @@ int32_t PlayerCharacter::calculateMeleeAttackPower()
 {
     if (this->attackPowerOverride == -1) {
         if (this->playerClass.cls == this->playerClass.WARRIOR) {
-            return applyMeleeApBuffs(this->level*3 + (this->strength*2-20));
+            return applyMeleeApBuffs(this->level*3 + (this->getFinalStrengthValue()*2-20));
         }
         return 0;
     } else {
@@ -768,6 +798,16 @@ float PlayerCharacter::getGlobalDamageModifier() const
 void PlayerCharacter::setGlobalDamageModifier(float value)
 {
     globalDamageModifier = value;
+}
+
+float PlayerCharacter::getHitChanceModifier() const
+{
+    return hitChanceModifier;
+}
+
+void PlayerCharacter::setHitChanceModifier(float value)
+{
+    hitChanceModifier = value;
 }
 
 PlayerCharacter::PlayerCharacter()

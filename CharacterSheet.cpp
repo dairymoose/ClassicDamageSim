@@ -107,8 +107,8 @@ void CharacterSheet::setTokenValue(std::string text, int32_t tokenNo)
         this->PC->setArmor(numeric);
         break;
     case 12:
-        ss >> numeric;
-        //hit chance
+        ss >> real;
+        this->PC->setHitChanceModifier(real/100.0f);
         break;
     case 13:
         ss >> real;

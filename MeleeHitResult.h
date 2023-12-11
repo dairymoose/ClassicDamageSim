@@ -1,6 +1,8 @@
 #ifndef MELEEHITRESULT_H
 #define MELEEHITRESULT_H
 
+#include <string>
+
 struct MeleeAttackTable {
     float miss;
     float dodge;
@@ -23,5 +25,7 @@ enum class MeleeHitResult {
     CrushingBlow,
     OrdinaryHit
 };
+
+std::string getMeleeHitResultName(MeleeHitResult mhr);
 
 #endif // MELEEHITRESULT_H

@@ -90,6 +90,17 @@ bool ActionsDialog::hasPriorityActionByInternalName(std::string name)
     return false;
 }
 
+void ActionsDialog::clearAllActions()
+{
+    std::vector<PriorityAction *> actions;
+    for (auto& action : this->getCurrentPriorityActionList()->getPriorityActions()) {
+        actions.push_back(action);
+    }
+    for (auto& action : actions) {
+        this->getClassActionsDialog()->transferPriorityActionFromExistingDialog(this, action);
+    }
+}
+
 void ActionsDialog::addPriorityActionUi(PriorityAction *action, std::string nameOverride, std::string name, std::string condition)
 {
     SingularPriorityAction *SPA = new SingularPriorityAction();
@@ -359,8 +370,8 @@ void ActionsDialog::on_saveButton_clicked()
     if (!result.isEmpty()) {
         QFile file(result);
         file.open(QIODevice::WriteOnly);
-        for (auto& widget : this->priorityActionWidgets) {
-            file.write(widget->getPriorityAction()->getInternalName().c_str());
+        for (auto& action : this->getCurrentPriorityActionList()->getPriorityActions()) {
+            file.write(action->getInternalName().c_str());
             file.putChar('\n');
         }
         file.close();
@@ -373,6 +384,8 @@ void ActionsDialog::on_loadButton_clicked()
     qfd.setDefaultSuffix(".txt");
     QString result = qfd.getOpenFileName(this, QString(), QString(), "*.txt");
     if (!result.isEmpty()) {
+        this->clearAllActions();
+        
         QFile file(result);
         file.open(QIODevice::ReadOnly);
         QByteArray bytes = file.readAll();

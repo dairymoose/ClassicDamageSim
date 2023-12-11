@@ -19,6 +19,12 @@ class Buff
     std::function<float (Combatant *Cbt)> onGetMeleeAutoAttackMultiplier = nullptr;
     std::function<void (Combatant *Cbt)> onAutoAttack = nullptr;
     std::function<void (Combatant *Cbt, float timestamp)> onAbilityDamageMelee = nullptr;
+    
+    std::function<int32_t (PlayerCharacter *PC, int32_t rank)> onCalculateStrengthBoost = nullptr;
+    std::function<int32_t (PlayerCharacter *PC, int32_t rank)> onCalculateAllStatsBoost = nullptr;
+    std::function<int32_t (PlayerCharacter *PC, int32_t rank)> onCalculateArmorBoost = nullptr;
+    std::function<int32_t (PlayerCharacter *PC, int32_t rank)> onCalculatePercentStatBoost = nullptr;
+    
     AbilityDamageType abilityDamageType = AbilityDamageType::Other;
     bool ignoresArmor = false;
 public:
@@ -47,6 +53,14 @@ public:
     void setAbilityDamageType(const AbilityDamageType &value);
     bool getIgnoresArmor() const;
     void setIgnoresArmor(bool value);
+    std::function<int32_t (PlayerCharacter *PC, int32_t rank)> getOnCalculateStrengthBoost() const;
+    void setOnCalculateStrengthBoost(const std::function<int32_t (PlayerCharacter *PC, int32_t rank)> &value);
+    std::function<int32_t (PlayerCharacter *PC, int32_t rank)> getOnCalculateAllStatsBoost() const;
+    void setOnCalculateAllStatsBoost(const std::function<int32_t (PlayerCharacter *PC, int32_t rank)> &value);
+    std::function<int32_t (PlayerCharacter *PC, int32_t rank)> getOnCalculateArmorBoost() const;
+    void setOnCalculateArmorBoost(const std::function<int32_t (PlayerCharacter *PC, int32_t rank)> &value);
+    std::function<float (PlayerCharacter *PC, int32_t rank)> getOnCalculatePercentStatBoost() const;
+    void setOnCalculatePercentStatBoost(const std::function<float (PlayerCharacter *PC, int32_t rank)> &value);
 };
 
 #endif // BUFF_H

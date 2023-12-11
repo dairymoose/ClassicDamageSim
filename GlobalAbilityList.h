@@ -23,6 +23,10 @@ public:
     Ability *QuickStrike = nullptr;
     Ability *RagingBlow = nullptr;
     Ability *FreeWildStrikes = nullptr;
+    Ability *FreeBlessingOfMight = nullptr;
+    Ability *FreeBlessingOfKings = nullptr;
+    Ability *FreeMarkOfTheWild = nullptr;
+    Ability *FreeStrengthBonus = nullptr;
     Ability *Overpower = nullptr;
     Buff *Enrage = nullptr;
     Buff *WildStrikes = nullptr;

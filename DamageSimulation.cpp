@@ -25,6 +25,7 @@ void DamageSimulation::resetIterationsData()
     this->iterationsMaxDps = -1.0f;
     this->iterationsDamageDoneByBuff.clear();
     this->iterationsDamageDoneByAbility.clear();
+    this->iterationsRecordedDps.clear();
 }
 
 void DamageSimulation::reset()
@@ -156,6 +157,7 @@ void DamageSimulation::simulate(PriorityActionList *priorityActions)
     }
     this->iterationsTotalTimeLength += this->time;
     float dps = PC->getDamageDone()/this->time;
+    iterationsRecordedDps.push_back(dps);
     if (iterationsMinDps == -1.0f) {
         iterationsMinDps = dps;
     }
@@ -173,30 +175,73 @@ void DamageSimulation::simulate(PriorityActionList *priorityActions)
         auto&& found = this->iterationsDamageDoneByAbility.find(it.first);
         int32_t damage = 0;
         if (found != this->iterationsDamageDoneByAbility.end()) {
-            damage = found->second;
+            damage = found->second.damage;
+        } else {
+            this->iterationsDamageDoneByAbility[it.first] = {};
+            this->iterationsDamageDoneByAbility[it.first].ability = it.first;
         }
-        damage += it.second;
-        this->iterationsDamageDoneByAbility[it.first] = damage;
+        damage += it.second.damage;
+        this->iterationsDamageDoneByAbility[it.first].damage = damage;
+        this->iterationsDamageDoneByAbility[it.first].count += it.second.count;
+        this->iterationsDamageDoneByAbility[it.first].nonCritCount += it.second.nonCritCount;
+        this->iterationsDamageDoneByAbility[it.first].nonCritDamage += it.second.nonCritDamage;
+        this->iterationsDamageDoneByAbility[it.first].critCount += it.second.critCount;
+        this->iterationsDamageDoneByAbility[it.first].critOnlyDamage += it.second.critOnlyDamage;
     }
     for (auto& it : PC->getDamageDoneByBuff()) {
+        if (PC->hasBuff(it.second.buff) || PC->getTarget()->hasDebuff(it.second.buff)) {
+            //buffUptime is wrong if a buff is cast just prior to battle ending.  Subtract total buff duration and only add active portion.
+            it.second.buffUptime -= it.second.mostRecentBuffDuration;
+            it.second.buffUptime += (this->time - it.second.mostRecentBuffTimestamp);
+        }
+        
         auto&& found = this->iterationsDamageDoneByBuff.find(it.first);
         int32_t damage = 0;
         if (found != this->iterationsDamageDoneByBuff.end()) {
-            damage = found->second;
+            damage = found->second.damage;
+        } else {
+            this->iterationsDamageDoneByBuff[it.first] = {};
+            this->iterationsDamageDoneByBuff[it.first].buff = it.first;
         }
-        damage += it.second;
-        this->iterationsDamageDoneByBuff[it.first] = damage;
+        damage += it.second.damage;
+        this->iterationsDamageDoneByBuff[it.first].damage = damage;
+        this->iterationsDamageDoneByBuff[it.first].count += it.second.count;
+        this->iterationsDamageDoneByBuff[it.first].nonCritCount += it.second.nonCritCount;
+        this->iterationsDamageDoneByBuff[it.first].nonCritDamage += it.second.nonCritDamage;
+        this->iterationsDamageDoneByBuff[it.first].critCount += it.second.critCount;
+        this->iterationsDamageDoneByBuff[it.first].critOnlyDamage += it.second.critOnlyDamage;
+        this->iterationsDamageDoneByBuff[it.first].buffUptime += it.second.buffUptime;
     }
     ++iterationCount;
 }
 
 struct DpsElement {
     std::string name;
-    int32_t damage;
+    int64_t damage = 0;
+    int32_t count = 0;
     
-    DpsElement(std::string name, int32_t damage) {
+    float buffUptime = 0.0f;
+    
+    int64_t nonCritDamage = 0;
+    int32_t nonCritCount = 0;
+    
+    int64_t critOnlyDamage = 0;
+    int32_t critCount = 0;
+    
+    DpsElement(std::string name, int32_t damage, int32_t count,
+               int64_t nonCritDamage,
+               int32_t nonCritCount,
+               int64_t critOnlyDamage,
+               int32_t critCount,
+               float buffUptime) {
         this->name = name;
         this->damage = damage;
+        this->count = count;
+        this->nonCritDamage = nonCritDamage;
+        this->nonCritCount = nonCritCount;
+        this->critOnlyDamage = critOnlyDamage;
+        this->critCount = critCount;
+        this->buffUptime = buffUptime;
     }
 };
 
@@ -208,9 +253,12 @@ struct DpsElementSort {
 
 void DamageSimulation::printIterationSummary(std::ostream &stream)
 {
+    std::sort(this->iterationsRecordedDps.begin(), this->iterationsRecordedDps.end());
+    float medianDps = this->iterationsRecordedDps[this->iterationsRecordedDps.size()/2];
     stream<<"Damage Summary<br>";
     stream<<"Level "<<PC->getLevel()<<" "<<PC->getPlayerRace()<<" "<<PC->getPlayerClass().getClassName()<<": "<<PC->getName()<<"<br>";
     stream<<"Iterations: "<<this->iterationCount<<"<br>";
+    stream<<"Median DPS: "<<(medianDps)<<"<br>";
     stream<<"Average DPS: "<<(this->iterationsDpsSummation/this->iterationCount)<<"<br>";
     stream<<"Min DPS: "<<this->iterationsMinDps<<"<br>";
     stream<<"Max DPS: "<<this->iterationsMaxDps<<"<br>";
@@ -227,17 +275,36 @@ void DamageSimulation::printIterationSummary(std::ostream &stream)
     int64_t damageTotal = 0;
     std::vector<DpsElement> dpsElements;
     for (auto& it : this->iterationsDamageDoneByAbility) {
-        damageTotal += it.second;
-        dpsElements.emplace_back(it.first->getName(), it.second);
+        damageTotal += it.second.damage;
+        dpsElements.emplace_back(it.first->getName(), it.second.damage, it.second.count, it.second.nonCritDamage, it.second.nonCritCount, it.second.critOnlyDamage, it.second.critCount, -1.0f);
     }
     for (auto& it : this->iterationsDamageDoneByBuff) {
-        damageTotal += it.second;
-        dpsElements.emplace_back(it.first->getName(), it.second);
+        damageTotal += it.second.damage;
+        dpsElements.emplace_back(it.first->getName(), it.second.damage, it.second.count, it.second.nonCritDamage, it.second.nonCritCount, it.second.critOnlyDamage, it.second.critCount, it.second.buffUptime);
     }
     std::sort(dpsElements.begin(), dpsElements.end(), DpsElementSort());
     for (int i=0; i<dpsElements.size(); ++i) {
         float dmgPct = (100.0f*(float)dpsElements[i].damage/damageTotal);
-        stream<<dpsElements[i].name<<": "<<(dpsElements[i].damage/this->iterationCount)<<" (<font color=\"green\">"<<std::fixed<<std::setprecision(2)<<dmgPct<<"</font>%)"<<"<br>";
+        int32_t nonCritDivisor = dpsElements[i].nonCritCount;
+        int32_t critOnlyDivisor = dpsElements[i].critCount;
+        if (nonCritDivisor == 0)
+            nonCritDivisor = 1;
+        if (critOnlyDivisor == 0)
+            critOnlyDivisor = 1;
+        std::stringstream buffStream;
+        std::stringstream damageStream;
+        if (dpsElements[i].damage > 0) {
+            damageStream<<(dpsElements[i].damage/this->iterationCount)<<" (<font color=\"green\">"<<std::fixed<<std::setprecision(2)<<dmgPct<<"</font>%), average count="<<((float)dpsElements[i].count/this->iterationCount)<<", average hit="<<(dpsElements[i].nonCritDamage/nonCritDivisor)<<", average crit="<<(dpsElements[i].critOnlyDamage/critOnlyDivisor)<<", crit chance="<<(100*(float)dpsElements[i].critCount/dpsElements[i].count)<<"%";
+        }
+        if (dpsElements[i].buffUptime > 0.0f) {
+            float pct = dpsElements[i].buffUptime / this->iterationsTotalTimeLength;
+            //float pct = dpsElements[i].buffUptime;
+            std::string commaText = "";
+            if (dpsElements[i].damage > 0)
+                commaText = ", ";
+            buffStream<<commaText<<"<font color=\"blue\">buff uptime</font>="<<(int32_t)(pct*100)<<"%";
+        }
+        stream<<dpsElements[i].name<<": "<<damageStream.str()<<buffStream.str()<<"<br>";
     }
 }
 

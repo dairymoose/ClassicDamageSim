@@ -29,8 +29,9 @@ class DamageSimulation
     float iterationsMinDps = -1.0f;
     float iterationsMaxDps = -1.0f;
     float iterationsDpsSummation = 0.0f;
-    std::unordered_map<Ability *, int32_t> iterationsDamageDoneByAbility;
-    std::unordered_map<Buff *, int32_t> iterationsDamageDoneByBuff;
+    std::unordered_map<Ability *, TrackedDamageInfo> iterationsDamageDoneByAbility;
+    std::unordered_map<Buff *, TrackedDamageInfo> iterationsDamageDoneByBuff;
+    std::vector<float> iterationsRecordedDps;
 public:
     DamageSimulation();
     PlayerCharacter *getPC() const;

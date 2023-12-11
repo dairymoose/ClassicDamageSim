@@ -15,6 +15,22 @@
 class Ability;
 class PriorityAction;
 
+struct TrackedDamageInfo {
+    int64_t damage = 0;
+    int64_t nonCritDamage = 0;
+    int32_t nonCritCount = 0;
+    int64_t critOnlyDamage = 0;
+    int32_t critCount = 0;
+    int32_t count = 0;
+    std::string event = "";
+    Ability *ability = nullptr;
+    Buff *buff = nullptr;
+    
+    float mostRecentBuffTimestamp = 0.0f;
+    float mostRecentBuffDuration = 0.0f;
+    float buffUptime = 0.0f;
+};
+
 class Combatant
 {
 protected:
@@ -50,8 +66,11 @@ protected:
     
     float lastDodgeTimestamp = -1.0f;
     
-    std::unordered_map<Ability *, int32_t> damageDoneByAbility;
-    std::unordered_map<Buff *, int32_t> damageDoneByBuff;
+    std::unordered_map<Ability *, TrackedDamageInfo> damageDoneByAbility;
+    std::unordered_map<Buff *, TrackedDamageInfo> damageDoneByBuff;
+    
+    void addNewAbilityToMap(Combatant *attacker, Ability *toAdd, MeleeHitResult mhr);
+    void addNewBuffToMap(Combatant *attacker, Buff *toAdd, MeleeHitResult mhr);
     
     template<typename T>
     void combatLogInternal(std::string damageTypeText, Combatant *attacker, int32_t damage, MeleeHitResult mhr, float timestamp, T *abilitySource) {
@@ -67,6 +86,7 @@ protected:
     }
     int32_t applyDamageInternal(std::string damageTypeText, Combatant *attacker, int32_t damage, MeleeHitResult mhr, float timestamp, Ability *abilitySource);
     int32_t applyDamageInternal(std::string damageTypeText, Combatant *attacker, int32_t damage, MeleeHitResult mhr, float timestamp, Buff *buffSource);
+    void adjustUptimeForRemovedBuff(Buff *buff, float timestamp);
 public:
     Combatant();
     virtual ~Combatant();
@@ -131,8 +151,8 @@ public:
     std::vector<AppliedBuff *>& getDebuffs();
     float getGcdDuration() const;
     void setGcdDuration(float value);
-    std::unordered_map<Ability *, int32_t>& getDamageDoneByAbility();
-    std::unordered_map<Buff *, int32_t>& getDamageDoneByBuff();
+    std::unordered_map<Ability *, TrackedDamageInfo>& getDamageDoneByAbility();
+    std::unordered_map<Buff *, TrackedDamageInfo>& getDamageDoneByBuff();
     int32_t getLevel() const;
     void setLevel(const int32_t &value);
     int32_t getResource() const;

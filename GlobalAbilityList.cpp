@@ -99,7 +99,7 @@ GlobalAbilityList::GlobalAbilityList()
     this->BattleShout = new Ability("Battle Shout");
     this->BattleShout->setAbilityDamageType(AbilityDamageType::Physical);
     Buff *BattleShoutBuff = new Buff("Battle Shout", this->BattleShout);
-    BattleShoutBuff->setOnCalculateDuration([&](Combatant *Cbt, int32_t rank){return 120;});
+    BattleShoutBuff->setOnCalculateDuration([&](Combatant *Cbt, int32_t rank){return 99999;});
     BattleShoutBuff->setOnCalculateAttackPower([](Combatant *Cbt, int32_t rank, int32_t AP){
         if (PlayerCharacter *PC = dynamic_cast<PlayerCharacter *>(Cbt)) {
             float talentBoost = 1.0f + PC->getTalentRank("Improved Battle Shout")*0.05f;
@@ -180,6 +180,7 @@ GlobalAbilityList::GlobalAbilityList()
     this->Execute->setResourceGenerationFunction([](PlayerCharacter *PC, int32_t rank, int32_t damageDone, bool isCritical){ return -100; });
     this->Execute->setCanUseFunction([](PlayerCharacter *PC, int32_t rank, float timestamp){float tHp = PC->getTarget()->getCurrentHp(); float tMaxHp = PC->getTarget()->getMaxHp(); float hpPct = tHp/tMaxHp; if (hpPct <= 0.20f) return true; return false;});
     this->Execute->setResourceCost(15);
+    this->Execute->setOnGetResourceCostModifier([](PlayerCharacter *PC, int32_t rank, int32_t resourceCost){int32_t impEx=PC->getTalentRank("Improved Execute");if (impEx == 0) return resourceCost; if (impEx == 1) return resourceCost-2; if (impEx == 2) return resourceCost-5;});
     
     this->Charge = new Ability("Charge");
     this->Charge->setResourceGenerationFunction([](PlayerCharacter *PC, int32_t rank, int32_t damageDone, bool isCritical){ int32_t impCharge = PC->getTalentRank("Improved Charge"); return 9 + (3*(rank-1)) + impCharge*3; });
@@ -344,6 +345,74 @@ GlobalAbilityList::GlobalAbilityList()
         return DamageSimulation::regexReplaceTooltipDirectDamage(tooltipText, ability, PC);
     });
     this->Overpower->setCannotBeBlockedOrDodgedOrParried(true);
+    
+    this->FreeBlessingOfMight = new Ability("Blessing of Might");
+    this->FreeBlessingOfMight->setAbilityDamageType(AbilityDamageType::Physical);
+    Buff *BlessingOfMightBuff = new Buff("Blessing of Might", this->FreeBlessingOfMight);
+    BlessingOfMightBuff->setOnCalculateDuration([&](Combatant *Cbt, int32_t rank){return 99999;});
+    BlessingOfMightBuff->setOnCalculateAttackPower([](Combatant *Cbt, int32_t rank, int32_t AP){
+        if (PlayerCharacter *PC = dynamic_cast<PlayerCharacter *>(Cbt)) {
+            int32_t b=0;
+            if (rank == 1) b = 20;
+            if (rank == 2) b = 35;
+            if (rank == 3) b = 55;
+            if (rank == 4) b = 85;
+            if (rank == 5) b = 115;
+            if (rank == 6) b = 155;
+            if (rank == 7) b = 185;
+            return (int32_t)(AP + b);
+        }
+        return AP;
+    });
+    this->FreeBlessingOfMight->setResourceCost(0);
+    this->FreeBlessingOfMight->setCanUseFunction([=](PlayerCharacter *PC, int32_t rank, float timestamp){if (!PC->hasBuff(BlessingOfMightBuff)) return true; return false;});
+    this->FreeBlessingOfMight->setGrantedBuff(BlessingOfMightBuff);
+    this->FreeBlessingOfMight->setTooltipText("Places a Blessing on the friendly target, increasing melee attack power by <AP> for 5 min.  Players may only have one Blessing on them per Paladin at any one time.");
+    this->FreeBlessingOfMight->setOnGetTooltip([](std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability){
+        std::stringstream ss;
+        ss<<ability->getGrantedBuff()->getOnCalculateAttackPower()(PC, ability->getRank(), 0);
+        return std::regex_replace(tooltipText, std::regex("<AP>"), ss.str());
+    });
+    
+    this->FreeBlessingOfKings = new Ability("Blessing of Kings");
+    this->FreeBlessingOfKings->setAbilityDamageType(AbilityDamageType::Physical);
+    Buff *BlessingOfKingsBuff = new Buff("Blessing of Kings", this->FreeBlessingOfKings);
+    BlessingOfKingsBuff->setOnCalculateDuration([&](Combatant *Cbt, int32_t rank){return 99999;});
+    BlessingOfKingsBuff->setOnCalculatePercentStatBoost([](PlayerCharacter *PC, int32_t rank){return 1.10f;});
+    this->FreeBlessingOfKings->setResourceCost(0);
+    this->FreeBlessingOfKings->setCanUseFunction([=](PlayerCharacter *PC, int32_t rank, float timestamp){if (!PC->hasBuff(BlessingOfKingsBuff)) return true; return false;});
+    this->FreeBlessingOfKings->setGrantedBuff(BlessingOfKingsBuff);
+    this->FreeBlessingOfKings->setTooltipText("Places a Blessing on the friendly target, increasing total stats by 10% for 5 min.  Players may only have one Blessing on them per Paladin at any one time.");
+    this->FreeBlessingOfKings->setOnGetTooltip([](std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability){
+        return tooltipText;
+    });
+    
+    this->FreeMarkOfTheWild = new Ability("Mark Of The Wild");
+    this->FreeMarkOfTheWild->setAbilityDamageType(AbilityDamageType::Physical);
+    Buff *MarkOfTheWildBuff = new Buff("Mark Of The Wild", this->FreeMarkOfTheWild);
+    MarkOfTheWildBuff->setOnCalculateDuration([&](Combatant *Cbt, int32_t rank){return 99999;});
+    MarkOfTheWildBuff->setOnCalculateAllStatsBoost([](PlayerCharacter *PC, int32_t rank){return 4;});
+    MarkOfTheWildBuff->setOnCalculateArmorBoost([](PlayerCharacter *PC, int32_t rank){return 105;});
+    this->FreeMarkOfTheWild->setResourceCost(0);
+    this->FreeMarkOfTheWild->setCanUseFunction([=](PlayerCharacter *PC, int32_t rank, float timestamp){if (!PC->hasBuff(MarkOfTheWildBuff)) return true; return false;});
+    this->FreeMarkOfTheWild->setGrantedBuff(MarkOfTheWildBuff);
+    this->FreeMarkOfTheWild->setTooltipText("Increases the friendly target's armor by 105 and all attributes by 4 for 30 min.");
+    this->FreeMarkOfTheWild->setOnGetTooltip([](std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability){
+        return tooltipText;
+    });
+    
+    this->FreeStrengthBonus = new Ability("Strength");
+    this->FreeStrengthBonus->setAbilityDamageType(AbilityDamageType::Physical);
+    Buff *FreeStrengthBonusBuff = new Buff("Strength", this->FreeStrengthBonus);
+    FreeStrengthBonusBuff->setOnCalculateDuration([&](Combatant *Cbt, int32_t rank){return 99999;});
+    FreeStrengthBonusBuff->setOnCalculateStrengthBoost([](PlayerCharacter *PC, int32_t rank){return 5;});
+    this->FreeStrengthBonus->setResourceCost(0);
+    this->FreeStrengthBonus->setCanUseFunction([=](PlayerCharacter *PC, int32_t rank, float timestamp){if (!PC->hasBuff(FreeStrengthBonusBuff)) return true; return false;});
+    this->FreeStrengthBonus->setGrantedBuff(FreeStrengthBonusBuff);
+    this->FreeStrengthBonus->setTooltipText("Increases the target's strength by 5.");
+    this->FreeStrengthBonus->setOnGetTooltip([](std::string tooltipText, float timestamp, PlayerCharacter *PC, Ability *ability){
+        return tooltipText;
+    });
     
     activeList = this;
 }

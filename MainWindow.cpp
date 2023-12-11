@@ -30,11 +30,25 @@ void MainWindow::simSetup()
         //PC->addTalent("Two-Handed Weapon Specialization", 4); 
         //PC->addTalent("Anger Management", 1);
         //PC->addTalent("Impale", 2);
+        
+        //current spec
         PC->addTalent("Improved Charge", 2);
         PC->addTalent("Improved Rend", 3);
         PC->addTalent("Deep Wounds", 1);
         PC->addTalent("Improved Heroic Strike", 2);
         PC->addTalent("Improved Overpower", 1);
+        
+        //fury spec
+        //PC->addTalent("Improved Battle Shout", 5);
+        //PC->addTalent("Improved Execute", 1);
+        
+        //proposed spec
+//        PC->addTalent("Improved Charge", 1);
+//        PC->addTalent("Improved Rend", 3);
+//        PC->addTalent("Deep Wounds", 1);
+//        PC->addTalent("Improved Heroic Strike", 3);
+//        PC->addTalent("Improved Overpower", 2);
+        
         PC->getRunes().push_back(new Rune("Consumed by Rage"));
         //PC->getRunes().push_back(new Rune("Frenzied Assault"));
         //PC->getRunes().push_back(new Rune("Blood Frenzy"));
@@ -50,8 +64,8 @@ void MainWindow::simSetup()
         enemy = new Enemy();
         enemy->setName("Target Dummy");
         enemy->setHp(20000);
-        enemy->setPhysicalDamageReduction(0.25f);
-        enemy->setLevel(28);
+        enemy->setPhysicalDamageReduction(0.20f);
+        enemy->setLevel(27);
         sim->getEnemyList().push_back(enemy);
         if (actionsDialog != nullptr) {
             actionsDialog->setEnemyListPtr(&sim->getEnemyList());
@@ -86,7 +100,7 @@ void MainWindow::simSetup()
             availableActionsForClass->getPriorityActions().push_back(PA);
         }
         {
-            PriorityAction *PA = new PriorityAction(gal->Charge, 2);
+            PriorityAction *PA = new PriorityAction(gal->Charge, 1);
             PA->setInternalName("charge");
             availableActionsForClass->getPriorityActions().push_back(PA);
         }
@@ -101,12 +115,12 @@ void MainWindow::simSetup()
             availableActionsForClass->getPriorityActions().push_back(PA);
         }
         {
-            PriorityAction *PA = new PriorityAction(gal->Execute, 3);
+            PriorityAction *PA = new PriorityAction(gal->Execute, 1);
             PA->setInternalName("execute");
             availableActionsForClass->getPriorityActions().push_back(PA);
         }
         {
-            PriorityAction *PA = new PriorityAction(gal->Rend, 5);
+            PriorityAction *PA = new PriorityAction(gal->Rend, 3);
             PA->setInternalName("rend");
             //PA->setPredicate([=](PlayerCharacter *PC, float timestamp){return !PC->getTarget()->hasDebuff(gal->Rend->getGrantedDebuff());});
             SET_PREDICATE_WITH_TEXT(PA, [=](PlayerCharacter *PC, float timestamp){return !PC->getTarget()->hasDebuff(gal->Rend->getGrantedDebuff());});
@@ -136,8 +150,15 @@ void MainWindow::simSetup()
             availableActionsForClass->getPriorityActions().push_back(PA);
         }
         {
-            PriorityAction *PA = new PriorityAction(gal->HeroicStrike, 1);
+            PriorityAction *PA = new PriorityAction(gal->HeroicStrike, 4);
             PA->setInternalName("heroic_strike");
+            availableActionsForClass->getPriorityActions().push_back(PA);
+        }
+        {
+            PriorityAction *PA = new PriorityAction(gal->HeroicStrike, 4);
+            PA->setNameOverride("Heroic Strike @ 100 Rage");
+            PA->setInternalName("heroic_strike_100_rage");
+            SET_PREDICATE_WITH_TEXT(PA, [](PlayerCharacter *PC, float timestamp){if (PC->getResource() == PC->getResourceMax()) return true; return false;});
             availableActionsForClass->getPriorityActions().push_back(PA);
         }
         {
@@ -168,6 +189,7 @@ void MainWindow::simSetup()
         {
             PriorityAction *PA = new PriorityAction(gal->FreeWildStrikes, 1);
             PA->setNameOverride("Start: Free Wild Strikes");
+            PA->setInternalName("free_wild_strikes");
             PA->setIgnoreGcd(true);
             PA->setIgnoreResourceCost(true);
             SET_PREDICATE_WITH_TEXT(PA, [&](PlayerCharacter *PC, float timestamp) {if (!didPreWildStrikes){didPreWildStrikes=true;return true;} return false;});
@@ -176,6 +198,34 @@ void MainWindow::simSetup()
         {
             PriorityAction *PA = new PriorityAction(gal->Overpower, 1);
             PA->setInternalName("overpower");
+            availableActionsForClass->getPriorityActions().push_back(PA);
+        }
+        {
+            PriorityAction *PA = new PriorityAction(gal->FreeBlessingOfMight, 3);
+            PA->setInternalName("blessing_of_might");
+            PA->setIgnoreGcd(true);
+            PA->setIgnoreResourceCost(true);
+            availableActionsForClass->getPriorityActions().push_back(PA);
+        }
+        {
+            PriorityAction *PA = new PriorityAction(gal->FreeMarkOfTheWild, 3);
+            PA->setInternalName("mark_of_the_wild");
+            PA->setIgnoreGcd(true);
+            PA->setIgnoreResourceCost(true);
+            availableActionsForClass->getPriorityActions().push_back(PA);
+        }
+        {
+            PriorityAction *PA = new PriorityAction(gal->FreeBlessingOfKings, 3);
+            PA->setInternalName("blessing_of_kings");
+            PA->setIgnoreGcd(true);
+            PA->setIgnoreResourceCost(true);
+            availableActionsForClass->getPriorityActions().push_back(PA);
+        }
+        {
+            PriorityAction *PA = new PriorityAction(gal->FreeStrengthBonus, 1);
+            PA->setInternalName("strength_bonus");
+            PA->setIgnoreGcd(true);
+            PA->setIgnoreResourceCost(true);
             availableActionsForClass->getPriorityActions().push_back(PA);
         }
     }
@@ -283,10 +333,14 @@ void MainWindow::on_iterateButton_clicked()
         PC->getCombatLog()->setEnabled(false);
         
         for (int i=0; i<value; ++i) {
+            this->simSetup();
             this->sim->reset();
             sim->simulate(PAL);
         }
         std::stringstream ss;
+//        for (auto& text : PC->getCombatLog()->getLogText()) {
+//            this->ui->simOutput->appendHtml(QString::fromStdString(text));
+//        }
         this->sim->printIterationSummary(ss);
         this->ui->simOutput->appendHtml(QString::fromStdString(ss.str()));
     }

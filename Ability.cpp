@@ -101,6 +101,15 @@ void Ability::triggerCooldown(PlayerCharacter *PC, float timestamp, bool actionI
     }
 }
 
+void Ability::partialRefundResourceCost(PlayerCharacter *PC, float timestamp)
+{
+    int32_t refund = this->getResourceCost()*0.80f;
+    if (refund > 0) {
+        COMBAT_LOG(timestamp, PC, "Refunding "<<refund<<" rage");
+        PC->setResource(PC->getResource() + refund);
+    }
+}
+
 void Ability::triggerResourceCost(PlayerCharacter *PC, float timestamp)
 {
     PC->setResource(PC->getResource() - this->getResourceCost());
@@ -304,6 +313,7 @@ void Ability::generateMeleeAttackTable(PlayerCharacter *PC, Enemy *target, Melee
         }
         mat.miss = baseMissChance + (defenseWeaponSkillDelta - 10)*0.004f;
     }
+    mat.miss -= PC->getHitChanceModifier();
     mat.miss = std::max(mat.miss, 0.0f);
     
     mat.dodge = 0.045f;
@@ -314,7 +324,7 @@ void Ability::generateMeleeAttackTable(PlayerCharacter *PC, Enemy *target, Melee
         mat.glancingBlow = 0.0f;
     if (mat.glancingBlow < 0.0f)
         mat.glancingBlow = 0.0f;
-    mat.glancingBlowDamageReduction = std::max(0.0f, -0.15f + 0.03f*(defenseWeaponSkillDelta));
+    mat.glancingBlowDamageReduction = std::max(0.05f, -0.15f + 0.03f*(defenseWeaponSkillDelta));
     
     mat.block = 0.0f;
     mat.criticalHit = PC->getCritChance();
@@ -379,31 +389,30 @@ void Ability::execute(PlayerCharacter *PC, std::vector<Enemy *> &enemyList, floa
     int32_t damage = DamageSimulation::getDamageForAbility(this, PC);
     bool isCritical = false;
     
-    MeleeAttackTable mat;
-    this->generateMeleeAttackTable(PC, PC->getTarget(), mat);
-    MeleeHitResult mhr = this->rollAttackTableForHitResult(mat);
-    if (mhr == MeleeHitResult::CriticalHit) {
-        isCritical = true;
-        damage = PC->applyCritDamage(this, damage);
-    }
-    
-    int32_t defenseWeaponSkillDelta = PC->getTarget()->getCalculatedDefense() - PC->getCalculatedWeaponSkill();
-    if (mhr == MeleeHitResult::GlancingBlow) {
-        damage *= 1.0f - mat.glancingBlowDamageReduction;
-    }
-    
-    if (PC->isWhiteAttack(this) && this == GlobalAbilityList::activeList->MeleeMainhandAutoAttack) {
-        if (PC->hasBuff(GlobalAbilityList::activeList->Enrage)) {
-            damage *= 1.20f;
-        }
-    }
+    MeleeHitResult mhr = MeleeHitResult::OrdinaryHit;
     bool didNotConnect = false;
-    if (mhr == MeleeHitResult::Miss || mhr == MeleeHitResult::Dodge || mhr == MeleeHitResult::Parry) {
-        didNotConnect = true;
-        damage = 0.0f;
-    }
-    if (mhr == MeleeHitResult::Dodge) {
-        PC->getTarget()->setLastDodgeTimestamp(timestamp);
+    if (this->getDamageFunction() != nullptr || (this->getGrantedDebuff() != nullptr && this->getGrantedDebuff()->getOnDotTickDamage() != nullptr)) {
+        MeleeAttackTable mat;
+        this->generateMeleeAttackTable(PC, PC->getTarget(), mat);
+        mhr = this->rollAttackTableForHitResult(mat);
+        if (mhr == MeleeHitResult::CriticalHit) {
+            isCritical = true;
+            damage = PC->applyCritDamage(this, damage);
+        }
+        
+        int32_t defenseWeaponSkillDelta = PC->getTarget()->getCalculatedDefense() - PC->getCalculatedWeaponSkill();
+        if (mhr == MeleeHitResult::GlancingBlow) {
+            damage *= 1.0f - mat.glancingBlowDamageReduction;
+        }
+        
+        if (mhr == MeleeHitResult::Miss || mhr == MeleeHitResult::Dodge || mhr == MeleeHitResult::Parry) {
+            didNotConnect = true;
+            damage = 0.0f;
+            this->partialRefundResourceCost(PC, timestamp);
+        }
+        if (mhr == MeleeHitResult::Dodge) {
+            PC->getTarget()->setLastDodgeTimestamp(timestamp);
+        }
     }
     
     if (shouldTriggerCooldown)
