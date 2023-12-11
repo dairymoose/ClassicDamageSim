@@ -271,16 +271,16 @@ int32_t Combatant::applyDamageInternal(std::string damageTypeText, Combatant *at
     return 0;
 }
 
-void Combatant::adjustUptimeForRemovedBuff(Buff *buff, float timestamp)
+void Combatant::adjustUptimeForRemovedBuff(Combatant *attacker, Buff *buff, float timestamp)
 {
-    if (buff == nullptr) {
+    if (attacker == nullptr || buff == nullptr) {
         return;
     }
-    auto&& found = this->damageDoneByBuff.find(buff);
-    if (found != this->damageDoneByBuff.end()) {
+    auto&& found = attacker->damageDoneByBuff.find(buff);
+    if (found != attacker->damageDoneByBuff.end()) {
         //adjust duration to only be partial duration instead of full
-        this->damageDoneByBuff[buff].buffUptime -= this->damageDoneByBuff[buff].mostRecentBuffDuration;
-        this->damageDoneByBuff[buff].buffUptime += (timestamp - this->damageDoneByBuff[buff].mostRecentBuffTimestamp);
+        attacker->damageDoneByBuff[buff].buffUptime -= attacker->damageDoneByBuff[buff].mostRecentBuffDuration;
+        attacker->damageDoneByBuff[buff].buffUptime += (timestamp - attacker->damageDoneByBuff[buff].mostRecentBuffTimestamp);
     }
 }
 
@@ -301,15 +301,15 @@ AppliedBuff *Combatant::applyBuff(Combatant *attacker, float timestamp, Buff *bu
                 AB->setAppliedTimestamp(timestamp);
                 AB->setLastTickedTimestamp(timestamp);
                 AB->setCapturedDuration(duration);
+                AB->setAppliedBy(attacker);
                 
                 auto&& found = attacker->damageDoneByBuff.find(buff);
-                if (found != attacker->damageDoneByBuff.end()) {
-                    attacker->damageDoneByBuff[buff].buffUptime += duration;
-                    attacker->damageDoneByBuff[buff].mostRecentBuffTimestamp = timestamp;
-                    attacker->damageDoneByBuff[buff].mostRecentBuffDuration = duration;
-                } else {
+                if (found == attacker->damageDoneByBuff.end()) {
                     this->addNewBuffToMap(attacker, buff, MeleeHitResult::OrdinaryHit);
                 }
+                attacker->damageDoneByBuff[buff].buffUptime += duration;
+                attacker->damageDoneByBuff[buff].mostRecentBuffTimestamp = timestamp;
+                attacker->damageDoneByBuff[buff].mostRecentBuffDuration = duration;
                 
                 this->Buffs.push_back(AB);
                 return AB;
@@ -336,13 +336,15 @@ void Combatant::applyDebuff(Combatant *attacker, float timestamp, Buff *debuff)
                 AB->setAppliedTimestamp(timestamp);
                 AB->setLastTickedTimestamp(timestamp);
                 AB->setCapturedDuration(duration);
+                AB->setAppliedBy(attacker);
                 
                 auto&& found = attacker->damageDoneByBuff.find(debuff);
-                if (found != attacker->damageDoneByBuff.end()) {
-                    attacker->damageDoneByBuff[debuff].buffUptime += duration;
-                } else {
+                if (found == attacker->damageDoneByBuff.end()) {
                     this->addNewBuffToMap(attacker, debuff, MeleeHitResult::OrdinaryHit);
                 }
+                attacker->damageDoneByBuff[debuff].buffUptime += duration;
+                attacker->damageDoneByBuff[debuff].mostRecentBuffTimestamp = timestamp;
+                attacker->damageDoneByBuff[debuff].mostRecentBuffDuration = duration;
                 
                 this->Debuffs.push_back(AB);
             }
@@ -377,8 +379,8 @@ bool Combatant::removeBuffByType(Buff *toRemove, float timestamp)
 {
     for (auto&& it=this->Buffs.begin(); it!=this->Buffs.end(); ++it) {
         if ((*it)->getBuff() == toRemove) {
-            this->adjustUptimeForRemovedBuff(toRemove, timestamp);
-            COMBAT_LOG(timestamp, this, "Buff "<<FONT_GREEN<<toRemove->getName()<<END_FONT<<" faded from "<<this->getName());
+            this->adjustUptimeForRemovedBuff((*it)->getAppliedBy(), toRemove, timestamp);
+            COMBAT_LOG(timestamp, (*it)->getAppliedBy(), "Buff "<<FONT_GREEN<<toRemove->getName()<<END_FONT<<" faded from "<<this->getName());
             this->Buffs.erase(it);
             return true;
         }
@@ -387,11 +389,11 @@ bool Combatant::removeBuffByType(Buff *toRemove, float timestamp)
 }
 
 bool Combatant::removeDebuffByType(Buff *toRemove, float timestamp)
-{
+{    
     for (auto&& it=this->Debuffs.begin(); it!=this->Debuffs.end(); ++it) {
         if ((*it)->getBuff() == toRemove) {
-            this->adjustUptimeForRemovedBuff(toRemove, timestamp);
-            COMBAT_LOG(timestamp, this, "Debuff "<<FONT_RED<<toRemove->getName()<<END_FONT<<" faded from "<<this->getName());
+            this->adjustUptimeForRemovedBuff((*it)->getAppliedBy(), toRemove, timestamp);
+            COMBAT_LOG(timestamp, (*it)->getAppliedBy(), "Debuff "<<FONT_RED<<toRemove->getName()<<END_FONT<<" faded from "<<this->getName());
             this->Debuffs.erase(it);
             return true;
         }
@@ -403,7 +405,7 @@ bool Combatant::removeBuff(AppliedBuff *toRemove, float timestamp)
 {
     for (auto&& it=this->Buffs.begin(); it!=this->Buffs.end(); ++it) {
         if (*it == toRemove) {
-            this->adjustUptimeForRemovedBuff(toRemove->getBuff(), timestamp);
+            this->adjustUptimeForRemovedBuff(toRemove->getAppliedBy(), toRemove->getBuff(), timestamp);
             COMBAT_LOG(timestamp, this, "Buff "<<FONT_GREEN<<toRemove->getBuff()->getName()<<END_FONT<<" faded from "<<this->getName());
             this->Buffs.erase(it);
             return true;
@@ -416,8 +418,8 @@ bool Combatant::removeDebuff(AppliedBuff *toRemove, float timestamp)
 {
     for (auto&& it=this->Debuffs.begin(); it!=this->Debuffs.end(); ++it) {
         if (*it == toRemove) {
-            this->adjustUptimeForRemovedBuff(toRemove->getBuff(), timestamp);
-            COMBAT_LOG(timestamp, this, "Debuff "<<FONT_RED<<toRemove->getBuff()->getName()<<END_FONT<<" faded from "<<this->getName());
+            this->adjustUptimeForRemovedBuff(toRemove->getAppliedBy(), toRemove->getBuff(), timestamp);
+            COMBAT_LOG(timestamp, toRemove->getAppliedBy(), "Debuff "<<FONT_RED<<toRemove->getBuff()->getName()<<END_FONT<<" faded from "<<this->getName());
             this->Debuffs.erase(it);
             return true;
         }

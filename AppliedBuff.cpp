@@ -64,7 +64,9 @@ void AppliedBuff::setTickCount(const int32_t &value)
 bool AppliedBuff::isBuffExpired(float timestamp)
 {
     float timeDiff = timestamp - this->appliedTimestamp;
-    if (DamageSimulation::almostEqual(std::min(timeDiff, this->capturedDuration), this->capturedDuration)) {
+    //if (DamageSimulation::almostEqual(std::min(timeDiff, this->capturedDuration), this->capturedDuration)) {)
+    timeDiff += FLOATING_POINT_SMALL_NUMBER;
+    if (timeDiff >= this->capturedDuration) {
         return true;
     }
     return false;
@@ -82,6 +84,16 @@ void AppliedBuff::triggerTickTimer(float timestamp)
 {
     ++tickCount;
     this->lastTickedTimestamp = timestamp;
+}
+
+Combatant *AppliedBuff::getAppliedBy() const
+{
+    return appliedBy;
+}
+
+void AppliedBuff::setAppliedBy(Combatant *value)
+{
+    appliedBy = value;
 }
 
 AppliedBuff::AppliedBuff()

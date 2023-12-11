@@ -11,6 +11,7 @@ class AppliedBuff
     int32_t lastTickedCount = 0;
     float lastTickedTimestamp = 0.0f;
     int32_t tickCount = 0;
+    Combatant *appliedBy = nullptr;
 public:
     AppliedBuff();
     AppliedBuff(Buff *buff);
@@ -29,6 +30,8 @@ public:
     bool isBuffExpired(float timestamp);
     bool isTickTimerExpired(Combatant *Cbt, float timestamp);
     void triggerTickTimer(float timestamp);
+    Combatant *getAppliedBy() const;
+    void setAppliedBy(Combatant *value);
 };
 
 #endif // APPLIEDBUFF_H

@@ -86,7 +86,7 @@ protected:
     }
     int32_t applyDamageInternal(std::string damageTypeText, Combatant *attacker, int32_t damage, MeleeHitResult mhr, float timestamp, Ability *abilitySource);
     int32_t applyDamageInternal(std::string damageTypeText, Combatant *attacker, int32_t damage, MeleeHitResult mhr, float timestamp, Buff *buffSource);
-    void adjustUptimeForRemovedBuff(Buff *buff, float timestamp);
+    void adjustUptimeForRemovedBuff(Combatant *attacker, Buff *buff, float timestamp);
 public:
     Combatant();
     virtual ~Combatant();

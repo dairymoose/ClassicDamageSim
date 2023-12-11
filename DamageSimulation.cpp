@@ -293,6 +293,7 @@ void DamageSimulation::printIterationSummary(std::ostream &stream)
             critOnlyDivisor = 1;
         std::stringstream buffStream;
         std::stringstream damageStream;
+        std::string nameColor = "<font color=\"maroon\">";
         if (dpsElements[i].damage > 0) {
             damageStream<<(dpsElements[i].damage/this->iterationCount)<<" (<font color=\"green\">"<<std::fixed<<std::setprecision(2)<<dmgPct<<"</font>%), average count="<<((float)dpsElements[i].count/this->iterationCount)<<", average hit="<<(dpsElements[i].nonCritDamage/nonCritDivisor)<<", average crit="<<(dpsElements[i].critOnlyDamage/critOnlyDivisor)<<", crit chance="<<(100*(float)dpsElements[i].critCount/dpsElements[i].count)<<"%";
         }
@@ -303,8 +304,9 @@ void DamageSimulation::printIterationSummary(std::ostream &stream)
             if (dpsElements[i].damage > 0)
                 commaText = ", ";
             buffStream<<commaText<<"<font color=\"blue\">buff uptime</font>="<<(int32_t)(pct*100)<<"%";
+            nameColor = "<font color=\"brown\">";
         }
-        stream<<dpsElements[i].name<<": "<<damageStream.str()<<buffStream.str()<<"<br>";
+        stream<<nameColor<<dpsElements[i].name<<"</font>"<<": "<<damageStream.str()<<buffStream.str()<<"<br>";
     }
 }
 
